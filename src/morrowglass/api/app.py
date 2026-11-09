@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from morrowglass.api.contract import build_router
 from morrowglass.api.store import Store
 from morrowglass.hardware import hardware_report
 from morrowglass.inference.generate import attention_maps, generate
@@ -50,6 +51,8 @@ async def lifespan(_: FastAPI):  # type: ignore[no-untyped-def]
 
 
 app = FastAPI(title="Morrowglass Model Foundry API", version="0.1.0", lifespan=lifespan)
+# The read-only contract for other local apps (GET /health, /capabilities, /runs, /runs/{id}), at the root.
+app.include_router(build_router(lambda: store))
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5101", "http://127.0.0.1:5101"],
                    allow_methods=["GET", "POST", "DELETE"], allow_headers=["*"])
 

@@ -100,3 +100,32 @@ def test_export_matches_schema(trained: tuple[Path, Path, str], tmp_path: Path) 
     del broken["license"]
     errs = validate_manifest(broken)
     assert any("license" in e for e in errs) and any("sha256" in e for e in errs)
+
+
+def test_contract_routes_are_read_only_and_labelled(client: TestClient, trained: tuple[Path, Path, str]) -> None:
+    rid = trained[2]
+    h = client.get("/health").json()
+    assert h["ok"] is True and h["project_id"] == "morrowglass" and h["last_run"] == {"run_id": rid, "status": "completed"}
+    caps = client.get("/capabilities").json()
+    assert caps["project_id"] == "morrowglass" and caps["active_mode"] == "recorded"
+    assert caps["implemented"] and caps["not_implemented"] and caps["disabled_by_design"]
+    assert caps["dataset"]["synthetic"] is False
+    runs = client.get("/runs?limit=8").json()
+    assert runs["project_id"] == "morrowglass" and runs["total"] == 1
+    r = runs["runs"][0]
+    assert r["run_id"] == rid and r["mode"] == "recorded" and r["kind"] == "training"
+    assert r["headline"].startswith("val ") and "bits/byte" in r["headline"]
+    one = client.get(f"/runs/{rid}").json()
+    assert one["summary"]["run_id"] == rid
+    assert client.get("/runs/nope").status_code == 404
+    assert client.post("/runs").status_code == 405
+
+
+def test_contract_runs_are_newest_first_and_skip_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                       trained: tuple[Path, Path, str]) -> None:
+    runs, ck, rid = trained
+    st = Store(sources={"measured": (runs, ck), "smoke": (runs, ck)}, index_path=tmp_path / "i.sqlite",
+               experiments_dir=tmp_path)
+    monkeypatch.setattr(app_module, "store", st)
+    body = TestClient(app_module.app).get("/runs").json()
+    assert [r["run_id"] for r in body["runs"]] == [rid]  # the smoke copy of the same folder is not listed

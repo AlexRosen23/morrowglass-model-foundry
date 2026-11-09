@@ -25,8 +25,9 @@ smoke: ## Offline smoke: sanity check, sample baselines, 3 tiny CPU experiments 
 	$(MG) run break-mask --profile smoke --quiet
 	@echo "smoke OK: outputs in reports/smoke/ (not evidence; plumbing only)"
 
-test: ## Full pytest suite (CPU, a few minutes)
-	$(UV) run --frozen pytest -q -p no:warnings
+test: ## Full pytest suite (CPU, a few minutes); writes reports/test_summary.json
+	$(UV) run --frozen pytest -q -p no:warnings --junitxml=artifacts/junit.xml
+	$(UV) run --frozen python scripts/junit_summary.py artifacts/junit.xml
 
 test-fast: ## Model/data/metric tests only
 	$(UV) run --frozen pytest -q -p no:warnings tests/test_model.py tests/test_data.py tests/test_tokenizers_and_metrics.py

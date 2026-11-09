@@ -1,6 +1,6 @@
 {
-  "analysis_git": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
-  "analyzed": "2026-11-09T05:01:01+00:00",
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:23:15+00:00",
   "arms": [
     "scarce-byte-medium-d0cf6f70-s0",
     "scarce-byte-medium-dropout-es-1ec37376-s0"
@@ -24,7 +24,7 @@
     "curves.png"
   ],
   "profile": "standard",
-  "researcher_note": null,
+  "researcher_note": "Hypothesis: the 4.85M-parameter model memorises the 240 KB sample; dropout 0.2 + early stopping (patience 4 evals) gives a lower best val loss and stops before the overfit regime.\nSetup: scarce-byte-medium (no regularisation, 1,500 steps) vs scarce-byte-medium-dropout-es (dropout 0.2, early stopping), same seed and data.\nObserved: without regularisation, the best val loss was 1.886 at step 550 and the final val loss 3.143. With the fix, the best val loss was 1.841 and training stopped itself at step 1,200 (status early_stopped). Supported.\nLimitations: the improvement in best val loss is modest (0.045 nats). Most of the benefit is not wasting compute in the overfit regime and not shipping the last checkpoint. One seed.\nNext test: a dropout sweep {0.1, 0.2, 0.3} x 2 seeds, plus weight decay 0.3.\nDecision: always report the best-on-validation checkpoint (the trainer already does), and enable early stopping for scarce-data runs.\n",
   "table": [
     {
       "best_step": 550,

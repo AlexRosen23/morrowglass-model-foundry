@@ -1,0 +1,37 @@
+{
+  "caveat": "Shared machine: other workloads were running; treat as indicative, not a benchmark.",
+  "checkpoint_bytes": 24248035,
+  "checkpoint_sha256": "9d03a6b37a6dbb6577fc1420ed2cd4228326339602c04c9a04437bd2b6edfd2d",
+  "devices": {
+    "cpu": {
+      "forward_latency_ms_batch1_fullctx": {
+        "median": 6.418,
+        "p90": 7.282
+      },
+      "forward_tokens_per_s_batch32": 68545,
+      "greedy_decode_ms_per_token": 2.224,
+      "memory_mb": 515.6,
+      "memory_note": "MPS: allocated tensors; CPU: process peak RSS (includes Python + torch)"
+    },
+    "mps": {
+      "forward_latency_ms_batch1_fullctx": {
+        "median": 2.059,
+        "p90": 2.354
+      },
+      "forward_tokens_per_s_batch32": 551420,
+      "greedy_decode_ms_per_token": 8.981,
+      "memory_mb": 8.2,
+      "memory_note": "MPS: allocated tensors; CPU: process peak RSS (includes Python + torch)"
+    }
+  },
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "cpu_count": 18,
+    "ram_gb": 48.0,
+    "torch": "2.15.0"
+  },
+  "measured": "2026-11-09T05:18:55+00:00",
+  "params": 2016960,
+  "run_id": "lm-bpe1024-small-eb29b8fb-s0",
+  "threads": 4
+}

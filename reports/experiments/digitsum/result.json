@@ -1,6 +1,6 @@
 {
-  "analysis_git": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
-  "analyzed": "2026-11-09T05:00:36+00:00",
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:59+00:00",
   "arms": [
     "digitsum-plain-98e90485-s0",
     "digitsum-posaug-45ea90a4-s0",
@@ -18,26 +18,26 @@
   "observations": {
     "accuracy": {
       "digitsum-plain-s0": {
-        "test_ood_far_acc": null,
-        "test_ood_near_acc": null,
+        "test_ood_far_acc": 0.094,
+        "test_ood_near_acc": 0.0965,
         "train_acc": 0.10113333333333334,
         "val_iid_acc": 0.1105
       },
       "digitsum-plain-s1": {
-        "test_ood_far_acc": null,
-        "test_ood_near_acc": null,
+        "test_ood_far_acc": 0.1075,
+        "test_ood_near_acc": 0.1065,
         "train_acc": 0.1016,
         "val_iid_acc": 0.111
       },
       "digitsum-posaug-s0": {
-        "test_ood_far_acc": null,
-        "test_ood_near_acc": null,
+        "test_ood_far_acc": 0.105,
+        "test_ood_near_acc": 0.103,
         "train_acc": 0.10163333333333334,
         "val_iid_acc": 0.1085
       },
       "digitsum-posaug-s1": {
-        "test_ood_far_acc": null,
-        "test_ood_near_acc": null,
+        "test_ood_far_acc": 0.106,
+        "test_ood_near_acc": 0.103,
         "train_acc": 0.10156666666666667,
         "val_iid_acc": 0.1105
       }
@@ -47,7 +47,7 @@
     "val_iid.png"
   ],
   "profile": "standard",
-  "researcher_note": null,
+  "researcher_note": "Hypothesis: a 2-layer model learns digit-sum mod 10 in-distribution (> 95% on 3-6 terms) but fails on 8-10 and 12-16 terms; position augmentation narrows the gap.\nSetup: 2 layers x 4 heads x 128, block 48, batch 128, 3,000 steps, lr 1e-3; plain vs pos-aug arms, seeds 0 and 1. Loss only on the answer digit.\nObserved: the model never learned the rule. Validation accuracy stayed at 10.8-11.1% (chance 10%) and the loss stayed at 2.303 nats = ln 10, i.e. a uniform guess over digits, for all four runs. The locked OOD splits are also at chance (9.4-10.7%). The in-distribution half of the hypothesis is not supported, so the length-shift question cannot be answered from these runs.\nDiagnosis: (1) not a pipeline bug: tests/test_synthetic_learning.py::test_sumtask_pipeline_learns_a_copy_rule trains the same encoding, masking and evaluator on \"answer = first digit\" and reaches > 90% in 250 steps; (2) a sum mod 10 over 3-6 digits is parity-like: every digit matters equally, and gradient descent gets no partial credit until the whole aggregation exists, which is the known plateau behaviour of parity tasks.\nLimitations: two seeds, one model size, 3,000 steps; a much longer run or curriculum might escape the plateau (grokking-style), and that was not tested.\nNext test: digitsum-scratchpad (registered after this result): the same task with an interleaved running sum, so each step is local.\nDecision: keep this negative result in the report, and test length generalisation with the scratchpad format.\n",
   "table": [
     {
       "best_step": 2900,
@@ -136,6 +136,6 @@
   ],
   "title": "Algorithmic transfer: digit-sum mod 10 under length shift",
   "track": "algorithmic",
-  "verdict": "pending",
-  "verdict_detail": "OOD splits are locked; run `morrowglass final-test` on these runs"
+  "verdict": "not supported",
+  "verdict_detail": "digitsum-plain-s0: iid 0.111 near 0.097 far 0.094; digitsum-plain-s1: iid 0.111 near 0.106 far 0.107; digitsum-posaug-s0: iid 0.108 near 0.103 far 0.105; digitsum-posaug-s1: iid 0.111 near 0.103 far 0.106"
 }

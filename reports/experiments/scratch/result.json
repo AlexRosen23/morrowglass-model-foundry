@@ -1,6 +1,6 @@
 {
-  "analysis_git": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
-  "analyzed": "2026-11-09T05:00:13+00:00",
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:55+00:00",
   "arms": [
     "lm-byte-small-2822813d-s0"
   ],
@@ -146,7 +146,7 @@
     "curve.png"
   ],
   "profile": "standard",
-  "researcher_note": null,
+  "researcher_note": "Hypothesis: a 1.87M-parameter byte-level Transformer beats the strongest count-based model on held-out plays, with non-overlapping 95% intervals.\nSetup: lm-byte-small-2822813d-s0, 4 layers x 4 heads x 192, context 256, 2,500 steps x 8,192 tokens (20.5M tokens, ~4.5 epochs), AdamW lr 3e-3, warmup 100 + cosine, MPS, 291 s. Baselines: uniform, unigram, Kneser-Ney byte orders 2-7 and BPE-1024 orders 2-4, all fitted on train; best on validation was KN-4 on BPE-1024 tokens.\nObserved: validation 2.086 bpb [2.074, 2.098] vs KN-4 2.107 [2.095, 2.120]. The point estimate is better by 0.021 bpb, but the intervals overlap by 0.003, so the pre-registered criterion is not met. Calibration is good for a small model: ECE 0.029, top-1 next-byte accuracy 57.0%. Train-subset bpb is 1.83 vs 2.09 on validation, so part of what it learned is specific to the training plays.\nTest (opened once, logged): flagship 2.171 [2.158, 2.183] vs KN-4 2.191 [2.176, 2.206]; again a lower point estimate with slightly overlapping intervals. Test plays are harder than validation plays for every model.\nLimitations: one seed; the model is undertrained (val loss was still falling at step 2,500); the KN baseline is a strong, well-tuned competitor at this data size.\nNext test: the extended profile (10k steps, ~20 min, needs owner approval), which the capacity results suggest would separate the curves.\nDecision: report as not supported. The same architecture at 4.85M parameters (lm-byte-medium) and with BPE tokens (lm-bpe1024-small) does beat the baseline with non-overlapping intervals on validation and test, which is evidence that capacity and context in bytes, not the architecture, limit the flagship.\n",
   "table": [
     {
       "best_step": 2500,

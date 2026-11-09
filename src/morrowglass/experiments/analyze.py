@@ -262,8 +262,11 @@ def analyze(name: str, profile: str = "standard") -> dict[str, Any]:
         f2_best = obs["fix2_lr3e-3"]["best_val_bpb"]
         fixed = f2_best is not None and (b_best is None or f2_best < b_best - 0.5)
         verdict = "supported" if broken_bad and fixed else "not supported"
-        detail = (f"broken: {obs['broken']['status']}, best bpb {b_best}; fix1 best {obs['fix1_warmup_clip']['best_val_bpb']}; "
-                  f"fix2 best {f2_best}")
+        def _r(x: float | None) -> str:
+            return "n/a" if x is None else f"{x:.3f}"
+
+        detail = (f"broken: {obs['broken']['status']}, best val bpb {_r(b_best)}; warmup+clip at lr 0.1: "
+                  f"{_r(obs['fix1_warmup_clip']['best_val_bpb'])}; lr 3e-3: {_r(f2_best)}")
     elif name in ("break-mask", "break-mask-long"):
         nc, c = by_name[f"{name}-noncausal"], by_name[f"{name}-causal"]
         ckroot = CHECKPOINT_ROOT if profile != "smoke" else SMOKE_DIR / "checkpoints"

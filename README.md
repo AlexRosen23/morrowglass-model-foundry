@@ -1,3 +1,150 @@
 # Morrowglass Model Foundry
 
-Work in progress.
+A reproducible miniature language-model laboratory: a decoder-only Transformer written in plain
+PyTorch, trained from scratch on public-domain Shakespeare, measured against strong count-based
+baselines, and studied with pre-registered ablations. Every number in the workbench and the docs
+is read from a saved run record.
+
+> CI is defined in `.github/workflows/ci.yml` but **GitHub Actions is not enabled** on this private
+> repository (owner approval required). The same checks run locally with `make ci`.
+
+## Results at a glance
+
+These are standard-profile runs on an Apple M5 Pro (MPS), with full run ids in [docs/RESULTS.md](docs/RESULTS.md).
+Bits per UTF-8 byte (bpb) on held-out plays; lower is better. Intervals are 95% bootstrap CIs over evaluation windows.
+
+| model | params | val bpb | test bpb (opened once, logged) |
+|---|---|---|---|
+| Kneser-Ney 4-gram on BPE-1024 tokens (best baseline, chosen on val) | — | 2.107 [2.095, 2.120] | 2.191 [2.176, 2.206] |
+| Transformer, byte-level, small (pre-registered flagship) | 1.87M | 2.086 [2.074, 2.098] | 2.171 [2.158, 2.183] |
+| Transformer, byte-level, medium | 4.85M | 2.037 [2.025, 2.048] | 2.141 [2.128, 2.154] |
+| Transformer, BPE-1024, small (best on validation) | 2.02M | **2.007** [1.993, 2.021] | **2.081** [2.064, 2.095] |
+
+| experiment (pre-registered) | verdict |
+|---|---|
+| scratch: flagship beats best n-gram with non-overlapping CIs | **not supported**: better point estimate, intervals overlap |
+| tokenization: BPE-1024 beats byte at equal steps | supported (not apples-to-apples in bytes seen; stated up front) |
+| capacity: bigger is better on 4.5 MB; medium overfits 240 KB | supported (val loss +1.26 nats after its minimum) |
+| optimization: warmup + cosine beats the alternatives across 3 seeds | **not supported**: constant lr matched it; lr 1e-3 clearly worse |
+| digit-sum mod 10 under length shift | **not supported**: stuck at chance (loss = ln 10); pipeline control test passes |
+| digit-sum scratchpad follow-up (registered after that failure) | 100% in distribution for all 4 runs; plain positions at chance on 8-16 terms; position augmentation transferred for 1 of 2 seeds (88.8% on 12-16 terms) |
+| break-lr / break-overfit | supported: failure reproduced, fix measured |
+| break-mask: no causal mask → training-loss collapse within 400 steps | **not supported** at 400 steps |
+| break-mask-long follow-up (2,000 steps) | supported: leaky val 0.0135 bpb looks perfect; leak-free scoring shows 3.38 vs 2.57 for the causal model |
+
+Negative results stay in the report; see [docs/FAILURE_ANALYSIS.md](docs/FAILURE_ANALYSIS.md).
+
+## Quick start
+
+```bash
+make setup     # uv sync (Python 3.12, torch 2.15.0) + npm ci
+make smoke     # ~1 min, offline sample, CPU: sanity check + tiny experiments
+make demo      # builds the UI; API on http://127.0.0.1:5100, workbench on http://127.0.0.1:5101
+```
+
+The demo shows the full measured ledger from `reports/` straight away. Checkpoints are not in git (size),
+so live generation and attention maps use whichever checkpoints exist locally: the smoke checkpoint
+after `make smoke`, or every standard run after `make data && make standard`.
+
+## Reproduce the evidence
+
+```bash
+make data                                # downloads Project Gutenberg #100 once (5.6 MB), builds splits
+uv run morrowglass estimate capacity     # measured time / memory / disk before running anything
+make standard                            # every standard experiment, ~45-60 min on Apple silicon (idempotent)
+make report                              # verdicts, plots, docs/RESULTS.md, HTML report, resume_evidence/metrics.json
+```
+
+Single pieces:
+
+```bash
+uv run morrowglass sanity
+uv run morrowglass baselines
+uv run morrowglass run scratch --profile standard
+uv run morrowglass final-test --runs <run_id> --reason "<why>"
+uv run morrowglass bench <run_id>
+uv run morrowglass export-artifact <run_id>
+```
+
+The `extended` profile and the optional pretrained-LoRA track refuse to run without `--approved`.
+They print their measured cost first.
+
+## What's inside
+
+```
+src/morrowglass/
+  model/transformer.py     decoder-only Transformer in native PyTorch (+ shape walkthrough, params, FLOPs)
+  data/                    Gutenberg pipeline (split by play), synthetic digit-sum, batching
+  tokenizer/               byte + byte-level BPE (HF tokenizers, fitted on train only)
+  train/                   trainer: seeds, AdamW, warmup/cosine, accumulation, clipping, early stopping,
+                           non-finite handling, sha256-verified checkpoints, resume
+  eval/                    bits/byte, bootstrap CIs, calibration (ECE), Kneser-Ney baselines
+  experiments/             pre-registered registry → runner → analysis → report; locked final test
+  inference/               sampling with per-token scores, attention maps, latency benchmark
+  finetune/lora.py         optional LoRA track (plumbing-tested; real run needs a download approval)
+  api/                     FastAPI (127.0.0.1:5100) + derived SQLite ledger index
+  contracts.py             portable model-artifact manifest (contracts/model_artifact_v1.schema.json)
+web/                       Vite + React + TypeScript workbench (127.0.0.1:5101)
+reports/runs/<run_id>/     config, metadata (commit, seed, hashes, hardware), metrics.jsonl, summary
+reports/experiments/<exp>/ result.json (verdict), plots, researcher note
+```
+
+The workbench has three panels:
+- **Model blueprint**: layer shapes and parameter counts.
+- **Evidence**: overlaid curves with exact config diffs, held-out metrics, reliability diagram, findings, Break the Model, live generation next to the n-gram baseline, attention heads.
+- **Ledger**: seed, commit, config hash, the test-access log.
+
+Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, `space`, `1-6`, `t`, `?`.
+
+## Guarantees backed by tests (`make test`: 87 passing, see `reports/test_summary.json`)
+
+- The causal mask is enforced: changing future tokens never changes earlier logits. A mask-less model fails the same test.
+- The analytic parameter count equals the real one. The fused and explicit attention paths agree.
+- A single fixed batch can be overfit, and that check passes before any experiment.
+- Tokenizer round-trips are lossless. The bits-per-byte maths is checked. Kneser-Ney distributions sum to 1. ECE behaves on known cases.
+- Splits are disjoint by work. Synthetic expressions never cross splits. Training never touches test.
+- Checkpoint save → load gives identical logits. A one-bit corruption is rejected. Resume equals uninterrupted training bit-for-bit on CPU.
+- Divergence is detected rather than crashing. Early stopping and cancellation work.
+- Generation is deterministic under a seed. API responses equal the files on disk. Model-artifact exports validate against the schema.
+
+## Hardware and ports
+
+- Developed on an Apple M5 Pro (18 cores, 48 GB) with PyTorch MPS. `device=auto` uses MPS only if a real op succeeds, otherwise CPU. There is no CUDA path.
+- Standard runs take 15 s to 11 min each on this shared machine.
+- Ports: API **5100**, web **5101**. Both were free on 2026-11-08; override with `API_PORT` / `WEB_PORT`.
+
+## Open gaps (not done, on purpose or for lack of approval)
+
+- **Pretrained LoRA comparison**: implemented and tested on a random tiny GPT-2. The real run needs a `distilgpt2` download (~350 MB), which needs the owner's OK: `uv run morrowglass lora --approved`.
+- **Extended profile** (about 4x the standard steps): needs approval. It's the most likely way to separate the flagship from the n-gram.
+- **Seeds**: one seed per main-track arm, three in the optimization study.
+- **Reproducibility on MPS**: runs are not bit-reproducible. CPU resume is.
+- **Scope**: validation and test are three plays each, from a single author.
+- **Constellation**: not attached; independent verification comes first.
+
+## Docs
+
+- Research framing:
+  - [Research question](docs/RESEARCH_QUESTION.md)
+  - [Dataset card](docs/DATASET_CARD.md)
+  - [Model card](docs/MODEL_CARD.md)
+  - [Experiment protocol](docs/EXPERIMENT_PROTOCOL.md)
+- Results:
+  - [Results](docs/RESULTS.md) (generated)
+  - [Experiment report](docs/EXPERIMENT_REPORT.md) (generated)
+  - [Ablations](docs/ABLATIONS.md)
+  - [Failure analysis](docs/FAILURE_ANALYSIS.md)
+- Design:
+  - [Architecture](docs/ARCHITECTURE.md)
+  - [Engineering decisions](docs/ENGINEERING_DECISIONS.md)
+  - [Model-artifact contract](docs/INTEGRATION_MODEL_ARTIFACT.md)
+- Career materials:
+  - [Interview defence](docs/INTERVIEW_DEFENSE.md)
+  - [Recruiter demo (90 s)](docs/RECRUITER_DEMO.md)
+  - [Recruiter case study](docs/RECRUITER_CASE_STUDY.md)
+  - [Resume bullets](docs/RESUME_BULLETS.md)
+- [Contributing](CONTRIBUTING.md)
+
+## License
+
+Code: MIT. Training text: public domain (Project Gutenberg eBook #100, boilerplate removed).

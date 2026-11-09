@@ -1,0 +1,115 @@
+{
+  "architecture": {
+    "config": {
+      "bias": false,
+      "block_size": 256,
+      "causal": true,
+      "d_ff": null,
+      "d_model": 192,
+      "dropout": 0.0,
+      "n_head": 4,
+      "n_layer": 4,
+      "pos_encoding": "learned",
+      "tie_weights": true,
+      "vocab_size": 256
+    },
+    "family": "decoder-only causal Transformer (pre-LN, tied embeddings)",
+    "params": 1869504
+  },
+  "artifact": {
+    "bytes": 7488082,
+    "format": "pytorch-state-dict",
+    "load": "torch.load(path, weights_only=True) -> MorrowglassLM(ModelConfig(**architecture.config))",
+    "path": "model.pt",
+    "sha256": "52f3c53d13f204c140819ec7b9be41c9fe2191885a2f179e00cdd238cecfd0be"
+  },
+  "created": "2026-11-09T05:18:58+00:00",
+  "evaluation": {
+    "dataset": "shakespeare",
+    "dataset_hash": "a9b80ce5897befa12b26a8863a316dcfba034283fcc4fdec5eeeec58be675c8b",
+    "primary_metric": "bits_per_byte (lower is better)",
+    "test": {
+      "bits_per_byte": 2.170947338244847,
+      "ci95": [
+        2.157953486540794,
+        2.1834638751615802
+      ],
+      "evaluated": "2026-11-09T05:01:46+00:00"
+    },
+    "test_access_log": "reports/test_access_log.jsonl",
+    "val": {
+      "bits_per_byte": 2.0858429544387227,
+      "ci95": [
+        2.0743703245762806,
+        2.0977968779094742
+      ],
+      "ece": 0.028702500833558436
+    }
+  },
+  "io": {
+    "input": {
+      "block_size": 256,
+      "dtype": "int64",
+      "shape": [
+        "batch",
+        "seq<=block_size"
+      ],
+      "type": "token_ids"
+    },
+    "output": {
+      "dtype": "float32",
+      "semantics": "unnormalised next-token scores; softmax gives model probabilities (uncalibrated)",
+      "shape": [
+        "batch",
+        "seq",
+        "vocab_size"
+      ],
+      "type": "logits",
+      "vocab_size": 256
+    }
+  },
+  "license": {
+    "code": "MIT",
+    "training_data": "Public domain (Project Gutenberg eBook #100, boilerplate removed)",
+    "weights": "MIT (trained by this project)"
+  },
+  "limitations": [
+    "Tiny model (~2M params) trained on ~4.5 MB of Shakespeare; not a general assistant.",
+    "Outputs are pastiche text with frequent nonsense; probabilities are not calibrated confidence.",
+    "No safety tuning; do not deploy for user-facing generation."
+  ],
+  "model_name": "morrowglass-lm-byte-small",
+  "model_version": "lm-byte-small-2822813d-s0",
+  "producer": {
+    "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+    "git_dirty": false,
+    "project": "morrowglass-model-foundry",
+    "run_id": "lm-byte-small-2822813d-s0"
+  },
+  "runtime": {
+    "approx_memory_mb": 71,
+    "built_on": "macOS-27.0.1-arm64-arm-64bit",
+    "devices": [
+      "cpu",
+      "mps"
+    ],
+    "python": ">=3.12",
+    "torch": "2.15.0"
+  },
+  "schema": "morrowglass.model_artifact",
+  "schema_version": "1.0.0",
+  "tests": [
+    "tests/test_model.py::test_causal_no_future_leakage",
+    "tests/test_model.py::test_param_count_matches_analytic",
+    "tests/test_trainer.py::test_checkpoint_roundtrip_identical_logits",
+    "tests/test_trainer.py::test_corrupted_checkpoint_is_rejected",
+    "tests/test_inference.py::test_generation_deterministic_under_seed",
+    "tests/test_contracts.py::test_export_matches_schema"
+  ],
+  "tokenizer": {
+    "kind": "utf-8 bytes (ids 0-255)",
+    "name": "byte",
+    "path": null,
+    "sha256": "1b69a917c1d77256241c558c278986705bcb023505ed7cff2667e8eedd5d55ec"
+  }
+}

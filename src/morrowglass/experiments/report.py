@@ -173,6 +173,24 @@ def build_metrics_json(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
     if opt and opt["verdict"] != "pending":
         add("Optimization ablation: configs x seeds executed", len(opt["arms"]), "runs", "reports/experiments/optimization/result.json",
             "uv run morrowglass run optimization")
+    btp = REPORTS / "baselines-shakespeare-test.json"
+    for p in sorted((REPORTS / "runs").glob("lm-*/test_eval.json")):
+        te = read_json(p)
+        if "test" in te["results"]:
+            v = te["results"]["test"]
+            add(f"Locked-test bits-per-byte of {te['run_id']} (95% CI {_ci(v['bits_per_byte_ci95'])})",
+                round(v["bits_per_byte"], 4), "bits/byte", te["run_id"], "uv run morrowglass final-test (logged access)")
+    if btp.exists():
+        b = read_json(btp)
+        add(f"Locked-test bits-per-byte of the best n-gram baseline {b['model']['model']} ({b['model']['tokenizer']}) "
+            f"(95% CI {_ci(b['test']['bits_per_byte_ci95'])})", round(b["test"]["bits_per_byte"], 4), "bits/byte",
+            "reports/baselines-shakespeare-test.json", "uv run morrowglass final-test (logged access)")
+    sp = results.get("digitsum-scratchpad")
+    if sp and sp["verdict"] != "pending":
+        acc = sp["observations"]["accuracy"]
+        add("Digit-sum scratchpad: in-distribution final-answer accuracy, all 4 runs (min)",
+            round(min(v["val_iid_acc"] for v in acc.values()), 4), "accuracy", ",".join(sp["arms"]),
+            "uv run morrowglass run digitsum-scratchpad")
     tests_file = REPORTS / "test_summary.json"
     if tests_file.exists():
         ts = read_json(tests_file)

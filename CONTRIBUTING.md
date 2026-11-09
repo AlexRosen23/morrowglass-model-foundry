@@ -41,9 +41,29 @@ shared 2,000/month private-repo budget, so still run `make ci` locally before pu
 - Never open the test split in a loop. Use `morrowglass final-test --reason "…"`, which logs every access.
 - After `make report`, write the interpretation in `reports/experiments/<exp>/note.md` (Hypothesis / Setup / Observed / Limitations / Next test / Decision), then run `make report` again.
 
+## Serving and standard evals
+
+| command | what |
+|---|---|
+| `make serve-openai` | API + OpenAI-compatible `/v1/completions`, `/v1/chat/completions` on 127.0.0.1:5100 |
+| `make bench-kv` | registered KV-cache study → `reports/serving/kv-cache/` |
+| `make quant-int8` | registered dynamic-int8 study → `reports/serving/int8/` |
+| `make lm-eval-setup && make lm-eval` | pinned lm-evaluation-harness through the API → `reports/lm_eval/` |
+| `make export-hf` | Hub-compatible folders in `artifacts/hf_export/` (cards copied to `reports/hf_export/`) |
+| `make serving-report` | regenerate `docs/SERVING_RESULTS.md` |
+
+- Register a new serving or eval study in `EVALUATIONS` (`experiments/registry.py`) and commit it **before** measuring.
+- Serving studies use validation text only.
+- Commit before measuring: each record stores the commit and a `dirty` flag.
+- The harness lives in `.venv-lmeval` (gitignored), so it never changes the project's lock file. Its full pin list is `eval/lm-eval-requirements.txt` (regenerate with `uv pip compile eval/lm-eval-requirements.in`).
+- **Never push to the Hugging Face Hub without the owner's approval.** The publish command is printed by `export-hf` and listed in `docs/SERVING_RESULTS.md`.
+
 ## Environment variables
 
 - `MORROWGLASS_WARM_BASELINE=0` skips fitting the n-gram baseline when the API starts.
+- `MORROWGLASS_DEFAULT_MODEL=<run_id>` (or `serve --model`) sets the model used when a `/v1` request or `/tokenize` names none.
+- `MORROWGLASS_ENABLE_HF=1` (or `serve --enable-hf`) also serves `hf:distilgpt2`, from the local Hugging Face cache only.
+- `API_PORT` / `WEB_PORT` move the API and the web preview (and the web proxy target), e.g. to run a second copy on test ports.
 
 No secrets are used. `.env*` files are gitignored; nothing needs one.
 

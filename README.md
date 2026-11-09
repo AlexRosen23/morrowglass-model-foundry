@@ -1,5 +1,7 @@
 # Morrowglass Model Foundry
 
+[![ci](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml)
+
 A reproducible miniature language-model laboratory: a decoder-only Transformer written in plain
 PyTorch, trained from scratch on public-domain Shakespeare, measured against strong count-based
 baselines, and studied with pre-registered ablations. Every number in the workbench and the docs
@@ -7,6 +9,38 @@ is read from a saved run record.
 
 > CI: `.github/workflows/ci.yml` runs on GitHub Actions for pull requests and pushes to `main`
 > (enabled with the owner's approval on 2026-11-08). `make ci` runs the same checks locally.
+
+## For AI Engineer reviewers (60 seconds)
+
+```bash
+make setup && make test                                   # all CPU, no downloads, no API keys
+uv run morrowglass serve --model <run_id>                 # OpenAI-compatible API on 127.0.0.1:5100 (needs a local checkpoint)
+curl -s 127.0.0.1:5100/v1/completions -H 'Content-Type: application/json' -d '{"prompt":"HAMLET.\n","max_tokens":60,"seed":0}'
+```
+
+What to look at:
+- **Serving.** A KV cache in a from-scratch PyTorch Transformer, tested to give the same logits as
+  the uncached path. OpenAI-compatible `/v1/completions` (echo, logprobs, stop, seed, SSE) and
+  `/v1/chat/completions`. Code: [`serving/openai_api.py`](src/morrowglass/serving/openai_api.py).
+- **Standard evals.** EleutherAI lm-evaluation-harness, run *through that endpoint*, and
+  cross-checked against the in-house evaluator.
+- **Artifacts.** Hugging Face Hub-compatible export (safetensors + config + an auto-filled model card),
+  saved locally and not published.
+- **Method.** Every study is registered (hypothesis + criterion) before it runs, and negative results
+  stay in.
+
+Headline numbers (each from a saved record):
+
+HEADLINE_TABLE
+
+Read next:
+- [AI Engineer readiness](docs/AI_ENGINEER_READINESS.md): which posting asks this covers and which it does not.
+- [Serving](docs/SERVING.md): how it works.
+- [Serving results](docs/SERVING_RESULTS.md): generated tables.
+
+![Serving tab: KV-cache study](docs/media/serving-kv-cache.png)
+
+A 90-second walkthrough of the UI is in [docs/media/walkthrough.webm](docs/media/walkthrough.webm).
 
 ## Results at a glance
 
@@ -87,9 +121,11 @@ src/morrowglass/
                            non-finite handling, sha256-verified checkpoints, resume
   eval/                    bits/byte, bootstrap CIs, calibration (ECE), Kneser-Ney baselines
   experiments/             pre-registered registry → runner → analysis → report; locked final test
-  inference/               sampling with per-token scores, attention maps, latency benchmark
+  inference/               sampling with per-token scores, KV cache decoder, attention maps, latency + int8 benchmarks
+  serving/                 OpenAI-compatible /v1 endpoints, backends, lm-evaluation-harness runner, results report
+  hub.py                   Hugging Face Hub-compatible export (PyTorchModelHubMixin) + auto-filled model card
   finetune/lora.py         pretrained distilgpt2 + LoRA vs frozen (executed with owner approval)
-  api/                     FastAPI (127.0.0.1:5100) + derived SQLite ledger index
+  api/                     FastAPI (127.0.0.1:5100) + derived SQLite ledger index (+ /v1 from serving/)
   contracts.py             portable model-artifact manifest (contracts/model_artifact_v1.schema.json)
 web/                       Vite + React + TypeScript workbench (127.0.0.1:5101)
 reports/runs/<run_id>/     config, metadata (commit, seed, hashes, hardware), metrics.jsonl, summary
@@ -100,8 +136,9 @@ The workbench has three panels:
 - **Model blueprint**: layer shapes and parameter counts.
 - **Evidence**: overlaid curves with exact config diffs, held-out metrics, reliability diagram, findings, Break the Model, live generation next to the n-gram baseline, attention heads.
 - **Ledger**: seed, commit, config hash, the test-access log.
+- **Serving** tab: the KV-cache, int8 and harness results, plus a live `POST /v1/completions` call.
 
-Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, `space`, `1-6`, `t`, `?`.
+Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, `space`, `1-7`, `t`, `?`.
 
 ## Guarantees backed by tests (`make test`: 89 passing, see `reports/test_summary.json`)
 
@@ -150,6 +187,10 @@ Constellation reads it for the Morrowglass world (`./scripts/demo.sh` is what it
   - [Dataset card](docs/DATASET_CARD.md)
   - [Model card](docs/MODEL_CARD.md)
   - [Experiment protocol](docs/EXPERIMENT_PROTOCOL.md)
+- Serving and readiness:
+  - [AI Engineer readiness](docs/AI_ENGINEER_READINESS.md)
+  - [Serving](docs/SERVING.md)
+  - [Serving results](docs/SERVING_RESULTS.md) (generated)
 - Results:
   - [Results](docs/RESULTS.md) (generated)
   - [Experiment report](docs/EXPERIMENT_REPORT.md) (generated)

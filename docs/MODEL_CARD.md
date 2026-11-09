@@ -35,6 +35,16 @@ Held-out plays: validation is *As You Like It*, *Hamlet* and *Titus Andronicus*;
 - The test split was opened once, after selection, and logged in `reports/test_access_log.jsonl`.
 - Inference cost on this machine is in `reports/runs/lm-byte-small-2822813d-s0/bench.json` (measured with `morrowglass bench`).
 
+## Serving and standard benchmarks
+
+- **Serving.** It is served through an OpenAI-compatible API with a KV cache.
+- **Standard benchmarks.** It was scored with EleutherAI lm-evaluation-harness through that API.
+- **Hub export.** It can be exported in Hugging Face Hub format, with an auto-filled card in
+  `reports/hf_export/<run_id>/README.md`.
+- **Where the numbers are.** [SERVING_RESULTS.md](SERVING_RESULTS.md); explanation in [SERVING.md](SERVING.md).
+- **Not a chat model.** The chat endpoint only wraps text in a script template.
+- **Weak on general English, as expected.** See the harness table.
+
 ## Behaviour and failure modes
 
 - **Pastiche, not meaning.** The model produces Shakespeare-shaped text: speaker names in capitals, verse line lengths, archaic words. It often invents words and loses the thread within a sentence. The UI labels samples `LIVE SAMPLE` and never presents them as quality metrics.

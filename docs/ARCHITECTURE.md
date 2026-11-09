@@ -22,6 +22,7 @@ model except the bounded smoke job.
    artifacts/ledger.sqlite  (derived index, rebuilt from the JSON)                        (NOT in git)
                                                   ▼
             api/ (FastAPI :5100, read-only + live sampling + bounded smoke job)
+                 + serving/ (OpenAI-compatible /v1, KV-cached decoding; lm-eval harness talks to it)
                                                   ▼
             web/ (Vite + React + TypeScript :5101): blueprint │ evidence │ ledger
 ```
@@ -44,6 +45,11 @@ model except the bounded smoke job.
 | `inference/` | sampling with per-token scores; attention maps; latency bench | determinism under seed |
 | `contracts.py` | portable model-artifact manifest (`contracts/model_artifact_v1.schema.json`) | export validates against schema |
 | `api/` | FastAPI + SQLite index | path traversal → 404; only smoke jobs |
+| `serving/openai_api.py` | OpenAI-compatible `/v1/completions` (echo, logprobs, stop, seed, SSE) and `/v1/chat/completions`; vLLM-style `/tokenize` | echo logprobs == direct forward; seed determinism; stream == non-stream; loopback only |
+| `serving/backends.py` | scratch checkpoints (KV-cached) and an optional `hf:distilgpt2` reference (local cache only) | HF off unless enabled |
+| `serving/harness.py` | runs the pinned lm-evaluation-harness against the API | `--limit` runs never write `reports/` |
+| `hub.py` | `PyTorchModelHubMixin` export + auto-filled model card | save → `from_pretrained` gives identical logits; no network |
+| `inference/quant.py` | dynamic int8 copy (CPU) | original model untouched |
 
 ## The model, line by line
 
@@ -64,6 +70,17 @@ checks that the two paths give the same logits.
 
 Residual projections are initialised with std `0.02/√(2L)`, following GPT-2, so the residual stream's
 variance does not grow with depth.
+
+## KV cache
+
+With `use_cache=True` every block returns its keys and values. Later calls feed only the new tokens.
+
+- Positions continue from the cache length.
+- New queries use an offset causal mask, so query `i` may read keys `0..t_past+i`.
+- Learned absolute positions mean the cache is only valid while the sequence fits in `block_size`.
+  Past that, `CachedDecoder` recomputes the sliding window every step, exactly as the uncached path does.
+
+See [SERVING.md](SERVING.md).
 
 ## Why these choices
 

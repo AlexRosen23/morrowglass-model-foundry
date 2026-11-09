@@ -34,8 +34,11 @@ def test_lora_trains_only_adapters_and_reduces_loss() -> None:
 def test_eval_bpb_is_finite_and_uses_byte_lengths() -> None:
     model = _tiny_gpt2()
     ids = np.arange(200) % 256
-    bpb = eval_bpb(model, ids, np.ones(256, dtype=np.int64), block=32, n_windows=3, device="cpu")
-    assert 0 < bpb < 20
+    r = eval_bpb(model, ids, np.ones(256, dtype=np.int64), block=32, n_windows=None, device="cpu")
+    assert 0 < r["bits_per_byte"] < 20
+    assert r["bytes_predicted"] == len(ids) - 1  # every token after the first, once
+    lo, hi = r["bits_per_byte_ci95"]
+    assert lo <= r["bits_per_byte"] <= hi
 
 
 def test_real_run_requires_approval() -> None:

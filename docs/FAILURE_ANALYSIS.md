@@ -17,7 +17,7 @@ appear in the workbench's *Break the Model* tab, read from `reports/experiments/
   - On the test split, opened once: 2.141 and 2.081 against the baseline's 2.191 [2.176, 2.206].
 - **Decision.**
   - Report the pre-registered flagship result as not supported. Do not swap in the better model after the fact.
-  - The extended-profile run (owner approval needed) is the direct test.
+  - The extended-profile run was the direct test. After the owner approved it, the same recipe at 10k steps reached 1.993 [1.981, 2.006] on validation and 2.089 [2.075, 2.103] on test, clear of the baseline on both. The standard verdict stays "not supported"; the extended run is a separate finding (`scratch-extended`).
 
 ## 2. Digit-sum never left chance (digitsum: not supported)
 

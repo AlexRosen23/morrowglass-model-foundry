@@ -26,6 +26,7 @@ Held-out plays: validation is *As You Like It*, *Hamlet* and *Titus Andronicus*;
 | model | val bpb | test bpb | val ECE |
 |---|---|---|---|
 | flagship byte-small | 2.086 [2.074, 2.098] | 2.171 [2.158, 2.183] | 0.029 |
+| flagship, extended (10k steps, `lm-byte-small-240f8c28-s0`) | 1.993 [1.981, 2.006] | 2.089 [2.075, 2.103] | 0.043 |
 | byte-medium | 2.037 [2.025, 2.048] | 2.141 [2.128, 2.154] | 0.027 |
 | BPE-1024-small | 2.007 [1.993, 2.021] | 2.081 [2.064, 2.095] | 0.055 |
 | best n-gram (KN-4, BPE-1024) | 2.107 [2.095, 2.120] | 2.191 [2.176, 2.206] | — |

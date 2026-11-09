@@ -11,6 +11,10 @@ use the measurement command instead of a number.
 
 - Designed and ran 30+ reproducible PyTorch training runs on Apple-silicon MPS (tokenization, model-capacity, learning-rate and schedule ablations across 3 seeds; controlled failure studies), with every metric traced to a git commit, seed, config hash and dataset hash, and 87 automated tests covering causal masking, checkpoint integrity and data-leakage guards.
 
+Alternative first bullet using the extended run (verified):
+
+- Built a decoder-only Transformer language model from scratch in PyTorch (1.87M parameters) with a pre-registered evaluation protocol; on held-out Shakespeare plays it reached 1.993 bits/byte on validation and 2.089 on the locked test split, vs 2.107 and 2.191 for a tuned Kneser-Ney n-gram baseline (non-overlapping 95% bootstrap intervals).
+
 Optional third bullet (verified):
 
 - Adapted a pretrained distilgpt2 with LoRA (147K trainable of 82M parameters, under 2 minutes on Apple-silicon MPS), lowering held-out validation bits-per-byte from 1.941 to 1.760 with non-overlapping bootstrap intervals.
@@ -33,5 +37,4 @@ Optional third bullet (verified):
 
 | claim | status | how to measure |
 |---|---|---|
-| Extended-profile flagship separates from the n-gram | planned | `uv run morrowglass run scratch --profile extended --approved` |
 | Position augmentation reliably fixes length generalisation | not supported (1 of 2 seeds) | add seeds to `digitsum-scratchpad` in the registry |

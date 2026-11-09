@@ -28,6 +28,15 @@
       "value": 1869504
     },
     {
+      "claim": "Scratch byte-level Transformer, extended budget (10k steps), validation bits-per-byte (95% CI [1.981, 2.006]) vs best n-gram 2.1070",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run scratch --profile extended --approved",
+      "run_id_or_source": "lm-byte-small-240f8c28-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 1.9933
+    },
+    {
       "claim": "BPE-1024 vs byte tokenization val bits-per-byte at equal steps (bpe, byte)",
       "dataset_version": "a9b80ce5897befa1",
       "reproduction_command": "uv run morrowglass run tokenization",
@@ -65,6 +74,15 @@
       "status": "verified",
       "unit": "bits/byte",
       "value": 2.1409
+    },
+    {
+      "claim": "Locked-test bits-per-byte of lm-byte-small-240f8c28-s0 (95% CI [2.075, 2.103])",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass final-test (logged access)",
+      "run_id_or_source": "lm-byte-small-240f8c28-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.089
     },
     {
       "claim": "Locked-test bits-per-byte of lm-byte-small-2822813d-s0 (95% CI [2.158, 2.183])",
@@ -115,7 +133,7 @@
       ]
     }
   ],
-  "generated": "2026-11-09T05:31:54+00:00",
-  "git": "39112b3867dce5cf56c255b3f8fcc9fe1d203e2c",
+  "generated": "2026-11-09T05:53:27+00:00",
+  "git": "490b8a800bae18584faa1ddf8a1e2c4c34936679",
   "policy": "Only status=verified claims may be used as resume achievements."
 }

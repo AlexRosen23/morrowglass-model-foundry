@@ -17,6 +17,7 @@ Bits per UTF-8 byte (bpb) on held-out plays; lower is better. Intervals are 95% 
 |---|---|---|---|
 | Kneser-Ney 4-gram on BPE-1024 tokens (best baseline, chosen on val) | — | 2.107 [2.095, 2.120] | 2.191 [2.176, 2.206] |
 | Transformer, byte-level, small (pre-registered flagship) | 1.87M | 2.086 [2.074, 2.098] | 2.171 [2.158, 2.183] |
+| same flagship, extended budget (10k steps, owner-approved) | 1.87M | 1.993 [1.981, 2.006] | 2.089 [2.075, 2.103] |
 | Transformer, byte-level, medium | 4.85M | 2.037 [2.025, 2.048] | 2.141 [2.128, 2.154] |
 | Transformer, BPE-1024, small (best scratch model on validation) | 2.02M | **2.007** [1.993, 2.021] | **2.081** [2.064, 2.095] |
 | distilgpt2, pretrained, frozen | 82.1M | 1.941 [1.927, 1.955] | not opened |
@@ -27,7 +28,7 @@ contain Shakespeare. bpb keeps the units comparable, but the held-out guarantee 
 
 | experiment (pre-registered) | verdict |
 |---|---|
-| scratch: flagship beats best n-gram with non-overlapping CIs | **not supported**: better point estimate, intervals overlap |
+| scratch: flagship beats best n-gram with non-overlapping CIs | **not supported** at the standard budget (intervals overlap); **supported** at the extended budget (1.993 vs 2.107; reported as a separate finding) |
 | tokenization: BPE-1024 beats byte at equal steps | supported (not apples-to-apples in bytes seen; stated up front) |
 | capacity: bigger is better on 4.5 MB; medium overfits 240 KB | supported (val loss +1.26 nats after its minimum) |
 | optimization: warmup + cosine beats the alternatives across 3 seeds | **not supported**: constant lr matched it; lr 1e-3 clearly worse |
@@ -122,7 +123,7 @@ Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, 
 ## Open gaps (not done, on purpose or for lack of approval)
 
 - **LoRA**: one seed, validation only. Full fine-tuning and other ranks have not been compared.
-- **Extended profile** (about 4x the standard steps): needs approval. It's the most likely way to separate the flagship from the n-gram.
+- **Extended profile**: run once for the flagship (owner-approved). Other experiments were not re-run at that budget.
 - **Seeds**: one seed per main-track arm, three in the optimization study.
 - **Reproducibility on MPS**: runs are not bit-reproducible. CPU resume is.
 - **Scope**: validation and test are three plays each, from a single author.

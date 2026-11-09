@@ -26,10 +26,12 @@ debug and explain a neural network myself, and that I report results honestly wh
 |---|---|
 | Kneser-Ney 4-gram (best baseline, chosen on validation) | 2.191 [2.176, 2.206] |
 | Transformer, byte-level, 1.87M (pre-registered flagship) | 2.171 [2.158, 2.183] |
+| same flagship, extended budget (10k steps) | 2.089 [2.075, 2.103] |
 | Transformer, BPE-1024, 2.02M (best scratch model on validation) | **2.081** [2.064, 2.095] |
 
 - **Mask removal.** Removing the causal mask produced a near-perfect *leaky* score (0.0135 bpb). Leak-free scoring showed the model was worse (3.38 vs 2.57).
 - **Digit-sum.** A digit-sum task stayed at chance (parity-like plateau) until a scratchpad made it learnable. Length generalisation then depended on the seed.
 
-**Limitation.** The pre-registered flagship's lead over the n-gram is inside the confidence interval,
-and the report says "not supported". Most arms have one seed. The LoRA comparison (frozen distilgpt2 1.941 → 1.760 val bpb) has one seed, and its pretrained base may have seen Shakespeare.
+**Limitation.** At the standard budget, the pre-registered flagship's lead over the n-gram is inside
+the confidence interval, and the report says "not supported". The extended budget separates it, but
+that is a separate finding. Most arms have one seed. The LoRA comparison (frozen distilgpt2 1.941 → 1.760 val bpb) has one seed, and its pretrained base may have seen Shakespeare.

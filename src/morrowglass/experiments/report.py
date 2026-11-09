@@ -163,6 +163,13 @@ def build_metrics_json(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
         add("Best count-based baseline (interpolated Kneser-Ney, order chosen on validation) validation bits-per-byte",
             round(o["baseline_val_bpb"], 4), "bits/byte", "reports/baselines-shakespeare.json", "uv run morrowglass baselines")
         add("Transformer parameter count", s["table"][0]["params"], "parameters", s["arms"][0], "make reproduce-scratch")
+    se = results.get("scratch-extended")
+    if se and se["verdict"] != "pending":
+        o = se["observations"]
+        add("Scratch byte-level Transformer, extended budget (10k steps), validation bits-per-byte (95% CI "
+            f"{_ci(o['transformer_val_bpb_ci95'])}) vs best n-gram {o['baseline_val_bpb']:.4f}",
+            round(o["transformer_val_bpb"], 4), "bits/byte", se["arms"][0],
+            "uv run morrowglass run scratch --profile extended --approved")
     t = results.get("tokenization")
     if t and t["verdict"] != "pending":
         o = t["observations"]

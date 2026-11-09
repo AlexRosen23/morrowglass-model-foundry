@@ -14,10 +14,9 @@ generated from run records. Nothing here relies on a run that was not executed.
 - For the byte model, bpb = loss/ln 2 exactly (`test_bpb_equals_loss_over_ln2_for_bytes`).
 
 **3. Is the Transformer really better than the n-gram?**
-- Only as much as the pre-registered criterion allows.
-- The Transformer's and the best Kneser-Ney model's 95% bootstrap intervals are both in RESULTS.md. If they overlap, the `scratch` verdict says "not supported", even when the Transformer's point estimate is lower.
+- At the standard budget, not by the pre-registered criterion. The flagship's 95% bootstrap interval (2.086 [2.074, 2.098]) overlaps the best Kneser-Ney model's (2.107 [2.095, 2.120]), so the `scratch` verdict says "not supported", even though the point estimate is lower.
+- With the owner-approved extended budget (10k steps, same recipe), yes: 1.993 [1.981, 2.006] on validation and 2.089 vs 2.191 on the locked test. That is reported as a separate finding; the standard verdict was not rewritten.
 - I chose a strong baseline: interpolated KN, order swept on validation, and also on BPE tokens, where it turned out best.
-- The larger `capacity` arms and longer training are where the gap should grow. More data or steps is the next experiment, not a re-interpretation.
 
 **4. How do you know your validation number is not leaking test or train?**
 - Splits are by whole play, and test plays never enter training, tokenizer fitting, baseline fitting or model selection.
@@ -71,7 +70,7 @@ generated from run records. Nothing here relies on a run that was not executed.
 - The fix is judged on validation. The test split is not used for this.
 
 **13. What would you do with 10x compute?**
-1. Run the `extended` profile for the flagship. It is already defined and gated behind owner approval with a measured estimate.
+1. Add data rather than steps. The extended flagship (10k steps) already separates from the n-gram (1.993 vs 2.107), but its best checkpoint came at step 8,400 and its train/val gap grew to 0.42 bpb.
 2. Equalise FLOPs in the capacity study, to fit a tiny scaling curve.
 3. Add RoPE vs learned positions on the digit-sum length split.
 4. Compare LoRA ranks and full fine-tuning against frozen distilgpt2 (LoRA already gives 1.941 → 1.760 val bpb), and check its pretraining data for Shakespeare.
@@ -85,5 +84,5 @@ generated from run records. Nothing here relies on a run that was not executed.
 - Scale and seeds. Each main-track arm except the optimization study has one seed, so differences smaller than about 0.02 bpb should not be trusted.
 - Validation and test are three plays each: one author, one era.
 - MPS runs are not bit-reproducible.
-- The `extended` run has not been executed. The LoRA run has one seed, and its pretrained base may have seen Shakespeare.
+- The extended budget was run for the flagship only. The LoRA run has one seed, and its pretrained base may have seen Shakespeare.
 - These are listed as open gaps in the README instead of being glossed over.

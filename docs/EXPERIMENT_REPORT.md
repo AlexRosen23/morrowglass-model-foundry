@@ -191,6 +191,26 @@ Limitations: the improvement in best val loss is modest (0.045 nats). Most of th
 Next test: a dropout sweep {0.1, 0.2, 0.3} x 2 seeds, plus weight decay 0.3.
 Decision: always report the best-on-validation checkpoint (the trainer already does), and enable early stopping for scarce-data runs.
 
+## Scratch Transformer vs count-based baselines (extended profile)
+
+**Verdict: supported.** Transformer 1.993 bpb vs best n-gram (kneser-ney-4, bpe1024) 2.107
+
+- **Hypothesis.** A 1.9M-parameter byte-level Transformer trained from scratch reaches lower held-out bits-per-byte than the best interpolated Kneser-Ney n-gram (order chosen on validation).
+- **Criterion (pre-registered).** Transformer val bpb upper 95% CI < best n-gram val bpb lower 95% CI.
+- **Runs.** `lm-byte-small-240f8c28-s0`
+- **Caveats.** Single seed for the flagship run (seed variation is measured in the optimization experiment). Validation plays are other Shakespeare plays: same author and era, so this is in-domain.
+
+![scratch-extended curve.png](../reports/experiments/scratch-extended/curve.png)
+
+Hypothesis: the pre-registered scratch hypothesis, unchanged. The same 1.87M-parameter byte-level recipe beats the best n-gram with non-overlapping 95% intervals. Only the step budget differs: the extended profile, which the owner approved on 2026-11-08 after seeing the measured estimate (16 min, 765 MB, 43 MB of checkpoints).
+Setup: lm-byte-small-240f8c28-s0, 10,000 steps x 8,192 tokens = 81.9M tokens (~18 epochs), lr 3e-3, warmup 100 + cosine, MPS, 924 s, clean commit 667bb5f.
+Observed: validation 1.993 bpb [1.981, 2.006] vs KN-4 2.107 [2.095, 2.120]. Supported, with a 0.09 bpb gap between the intervals. The best validation checkpoint was step 8,400. Train-subset bpb is 1.569 against 1.993 on validation, so the generalisation gap widened from 0.25 (standard run) to 0.42 bpb: with ~18 passes over 4.5 MB the model is starting to memorise. ECE 0.043 (standard: 0.029); top-1 next-byte accuracy 60.0%.
+Test (third logged opening, after selection): 2.089 [2.075, 2.103] vs KN-4 2.191 [2.176, 2.206], separated there too.
+Reading: the standard-profile "not supported" was a budget limit, not an architecture limit. Both results stay in the report: the standard verdict is unchanged, and this is a separate finding at a separate budget.
+Limitations: one seed; more steps means more epochs over the same small corpus, so gains will flatten and overfitting grow (best step 8,400 of 10,000).
+Next test: add dropout 0.1 at this budget, or more data (other public-domain Elizabethan drama), rather than more steps.
+Decision: the extended run is the reference byte-level model (export with `morrowglass export-artifact lm-byte-small-240f8c28-s0`).
+
 ## Pretrained adaptation: distilgpt2 + LoRA vs frozen
 
 **Verdict: supported.** frozen 1.941 [1.927, 1.955] -> LoRA 1.760 [1.748, 1.773] val bpb; 147,456 of 82,060,032 params trained

@@ -102,11 +102,14 @@ def ci_separated(lower_better: list[float] | None, other: list[float] | None) ->
 def analyze(name: str, profile: str = "standard") -> dict[str, Any]:
     exp: Experiment = build(name, profile)
     runs_dir = runs_dir_for(profile)
-    out_dir = experiments_dir_for(profile) / name
+    # Extended-profile analyses are separate findings ("<name>-extended") so they never overwrite the standard ones.
+    exp_id = f"{name}-extended" if profile == "extended" else name
+    out_dir = experiments_dir_for(profile) / exp_id
     recs = {a.run_id: load_run(runs_dir, a.run_id) for a in exp.arms}
     missing = [rid for rid, r in recs.items() if r is None]
     result: dict[str, Any] = {
-        "experiment": name, "title": exp.title, "track": exp.track, "profile": profile,
+        "experiment": exp_id, "title": exp.title + (" (extended profile)" if profile == "extended" else ""),
+        "track": exp.track, "profile": profile,
         "hypothesis": exp.hypothesis, "criterion": exp.criterion, "caveats": exp.caveats,
         "arms": [a.run_id for a in exp.arms], "missing_runs": missing, "analyzed": now_iso(),
         "analysis_git": git_provenance()["commit"], "plots": [], "observations": {},

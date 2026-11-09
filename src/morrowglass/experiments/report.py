@@ -30,7 +30,7 @@ def _ci(ci: list[float] | None) -> str:
 
 def _load_results() -> dict[str, dict[str, Any]]:
     out = {}
-    for n in [*ALL, "lora"]:
+    for n in [*ALL, *(f"{a}-extended" for a in ALL), "lora"]:
         p = REPORTS / "experiments" / n / "result.json"
         if p.exists():
             out[n] = read_json(p)

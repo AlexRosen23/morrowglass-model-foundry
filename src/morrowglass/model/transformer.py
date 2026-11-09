@@ -83,6 +83,8 @@ def sinusoidal_table(n_pos: int, d_model: int) -> Tensor:
 
 
 class CausalSelfAttention(nn.Module):
+    mask: Tensor  # registered buffer (1, 1, block_size, block_size), True where attention is allowed
+
     def __init__(self, cfg: ModelConfig) -> None:
         super().__init__()
         self.n_head = cfg.n_head
@@ -147,6 +149,8 @@ class Block(nn.Module):
 class MorrowglassLM(nn.Module):
     """Decoder-only language model. See module docstring for the shape walkthrough."""
 
+    pos_table: Tensor  # registered buffer: fixed sinusoidal table (block_size, d_model)
+
     def __init__(self, cfg: ModelConfig) -> None:
         super().__init__()
         self.cfg = cfg
@@ -194,7 +198,7 @@ class MorrowglassLM(nn.Module):
         pos_offset: int | Tensor = 0,
     ) -> ModelOutput:
         B, T = idx.shape
-        if T > self.cfg.block_size:
+        if self.cfg.block_size < T:
             raise ValueError(f"sequence length {T} > block_size {self.cfg.block_size}")
         x = self.tok_emb(idx)
         if isinstance(pos_offset, Tensor):  # per-example offsets (position augmentation)

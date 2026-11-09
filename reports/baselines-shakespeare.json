@@ -1,0 +1,305 @@
+{
+  "best": {
+    "model": "kneser-ney-4",
+    "order": 4,
+    "tokenizer": "bpe1024"
+  },
+  "best_val_bpb": 2.106995415066531,
+  "best_val_bpb_ci95": [
+    2.0946004846144484,
+    2.1199446199644223
+  ],
+  "created": "2026-11-09T04:04:18+00:00",
+  "dataset": "shakespeare",
+  "dataset_hash": "a9b80ce5897befa12b26a8863a316dcfba034283fcc4fdec5eeeec58be675c8b",
+  "git": {
+    "branch": "feat/model-foundry",
+    "commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+    "dirty": false
+  },
+  "results": [
+    {
+      "model": "uniform",
+      "order": 0,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 8.000000000000002,
+        "bits_per_byte_ci95": [
+          8.0,
+          8.0
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 5.545177444479564,
+        "perplexity_per_token": 256.0000000000004,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "model": "unigram(add-1)",
+      "order": 1,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 4.7528905327806354,
+        "bits_per_byte_ci95": [
+          4.7428088113795175,
+          4.763273187995203
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 3.294452672306954,
+        "perplexity_per_token": 26.962652624135117,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "discounts": [
+        0.7142857142857143,
+        0.47634069400630913
+      ],
+      "model": "kneser-ney-2",
+      "n_contexts_highest": 97,
+      "order": 2,
+      "seconds": 1.6,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 3.5961484861999673,
+        "bits_per_byte_ci95": [
+          3.5882661408932504,
+          3.604027967277598
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 2.4926601840844227,
+        "perplexity_per_token": 12.093404049374437,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "discounts": [
+        0.7142857142857143,
+        0.44785276073619634,
+        0.5182528295871194
+      ],
+      "model": "kneser-ney-3",
+      "n_contexts_highest": 2188,
+      "order": 3,
+      "seconds": 2.1,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 2.9088413028942037,
+        "bits_per_byte_ci95": [
+          2.8999485212592124,
+          2.9176292386345977
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 2.016255147797435,
+        "perplexity_per_token": 7.510147813435279,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "discounts": [
+        0.7142857142857143,
+        0.44785276073619634,
+        0.4879140555058192,
+        0.5460356432290564
+      ],
+      "model": "kneser-ney-4",
+      "n_contexts_highest": 19283,
+      "order": 4,
+      "seconds": 3.2,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 2.481744175413389,
+        "bits_per_byte_ci95": [
+          2.4714929032798243,
+          2.4920090288272534
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 1.7202139780588572,
+        "perplexity_per_token": 5.585723558693904,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "discounts": [
+        0.7142857142857143,
+        0.44785276073619634,
+        0.4879140555058192,
+        0.5577854759743829,
+        0.5851297343190243
+      ],
+      "model": "kneser-ney-5",
+      "n_contexts_highest": 91967,
+      "order": 5,
+      "seconds": 5.9,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 2.2385976368161904,
+        "bits_per_byte_ci95": [
+          2.2277639869532053,
+          2.248723136134061
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 1.5516776403672987,
+        "perplexity_per_token": 4.71938096903032,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "discounts": [
+        0.7142857142857143,
+        0.44785276073619634,
+        0.4879140555058192,
+        0.5577854759743829,
+        0.6271053575456385,
+        0.6238483747333745
+      ],
+      "model": "kneser-ney-6",
+      "n_contexts_highest": 286621,
+      "order": 6,
+      "seconds": 7.5,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 2.1651380305967125,
+        "bits_per_byte_ci95": [
+          2.1547137973131205,
+          2.175692797191105
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 1.5007593214312238,
+        "perplexity_per_token": 4.485093405225904,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "discounts": [
+        0.7142857142857143,
+        0.44785276073619634,
+        0.4879140555058192,
+        0.5577854759743829,
+        0.6271053575456385,
+        0.6865565902643582,
+        0.6707221226112726
+      ],
+      "model": "kneser-ney-7",
+      "n_contexts_highest": 660094,
+      "order": 7,
+      "seconds": 10.1,
+      "tokenizer": "byte",
+      "val": {
+        "bits_per_byte": 2.164677704722497,
+        "bits_per_byte_ci95": [
+          2.153786734954903,
+          2.1754759592113926
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 1.5004402478493726,
+        "perplexity_per_token": 4.483662558692965,
+        "tokens_predicted": 425673
+      }
+    },
+    {
+      "model": "uniform",
+      "order": 0,
+      "tokenizer": "bpe1024",
+      "val": {
+        "bits_per_byte": 4.208700105480028,
+        "bits_per_byte_ci95": [
+          4.188196511764976,
+          4.228728822623258
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 6.931471805599453,
+        "perplexity_per_token": 1024.0,
+        "tokens_predicted": 179153
+      }
+    },
+    {
+      "model": "unigram(add-1)",
+      "order": 1,
+      "tokenizer": "bpe1024",
+      "val": {
+        "bits_per_byte": 3.5020772400151037,
+        "bits_per_byte_ci95": [
+          3.4881330245700077,
+          3.5167730823289363
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 5.767707140404004,
+        "perplexity_per_token": 319.8036265538896,
+        "tokens_predicted": 179153
+      }
+    },
+    {
+      "discounts": [
+        0.5217391304347826,
+        0.5168352283434889
+      ],
+      "model": "kneser-ney-2",
+      "n_contexts_highest": 864,
+      "order": 2,
+      "seconds": 1.0,
+      "tokenizer": "bpe1024",
+      "val": {
+        "bits_per_byte": 2.475603586824834,
+        "bits_per_byte_ci95": [
+          2.4625570007347077,
+          2.488994992845394
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 4.07716777956553,
+        "perplexity_per_token": 58.978193834657986,
+        "tokens_predicted": 179153
+      }
+    },
+    {
+      "discounts": [
+        0.5217391304347826,
+        0.5554181710272516,
+        0.7025060546349424
+      ],
+      "model": "kneser-ney-3",
+      "n_contexts_highest": 102938,
+      "order": 3,
+      "seconds": 2.0,
+      "tokenizer": "bpe1024",
+      "val": {
+        "bits_per_byte": 2.1542667450511175,
+        "bits_per_byte_ci95": [
+          2.1416673417979943,
+          2.1669832512590954
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 3.5479456437438923,
+        "perplexity_per_token": 34.74187194345308,
+        "tokens_predicted": 179153
+      }
+    },
+    {
+      "discounts": [
+        0.5217391304347826,
+        0.5554181710272516,
+        0.7472533434163262,
+        0.8270987341593083
+      ],
+      "model": "kneser-ney-4",
+      "n_contexts_highest": 604529,
+      "order": 4,
+      "seconds": 3.8,
+      "tokenizer": "bpe1024",
+      "val": {
+        "bits_per_byte": 2.106995415066531,
+        "bits_per_byte_ci95": [
+          2.0946004846144484,
+          2.1199446199644223
+        ],
+        "bytes_predicted": 425673,
+        "loss_nats_per_token": 3.4700926528466045,
+        "perplexity_per_token": 32.13972014336525,
+        "tokens_predicted": 179153
+      }
+    }
+  ],
+  "seconds": 43.2,
+  "selection": "lowest val bits-per-byte",
+  "test_locked": true
+}

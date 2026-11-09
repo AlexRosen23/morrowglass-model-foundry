@@ -96,6 +96,39 @@ def encode_examples(examples: list[Example], block_size: int) -> tuple[torch.Ten
     return x, y
 
 
+# ---------------------------------------------------------------- scratchpad variant
+# Registered after the plain format stayed at chance (see reports/experiments/digitsum/note.md).
+# Each term is followed by the running sum mod 10: "3,3;9,2;4,6;" means 3 -> 3, +9 -> 2, +4 -> 6.
+# Every output depends only on the current digit and the previous running sum, so the rule is
+# local. The final answer is the last running sum, as in the plain format.
+
+
+def scratch_text(ex: Example) -> str:
+    digits = [int(c) for c in ex.expr.split("+")]
+    out, r = [], 0
+    for d in digits:
+        r = (r + d) % MOD
+        out.append(f"{d},{r};")
+    return "".join(out) + "\n"
+
+
+def encode_scratch(examples: list[Example], block_size: int) -> tuple[torch.Tensor, torch.Tensor]:
+    """Targets are the running-sum digits only (predicted at each ',' position)."""
+    n = len(examples)
+    x = torch.full((n, block_size), ord("\n"), dtype=torch.long)
+    y = torch.full((n, block_size), -100, dtype=torch.long)
+    for i, ex in enumerate(examples):
+        b = list(scratch_text(ex).encode())
+        if len(b) > block_size + 1:
+            raise ValueError(f"example longer than block_size: {ex.expr!r}")
+        inp = b[:-1]
+        x[i, : len(inp)] = torch.tensor(inp)
+        for pos, ch in enumerate(inp):
+            if ch == ord(","):
+                y[i, pos] = b[pos + 1]
+    return x, y
+
+
 def describe() -> dict[str, Any]:
     return {"task": "digit-sum mod 10", "mod": MOD, "seed": SEED,
             "splits": {k: {"min_terms": v[0], "max_terms": v[1], "n": v[2]} for k, v in SPLITS.items()}}

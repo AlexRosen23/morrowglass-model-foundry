@@ -1,0 +1,85 @@
+{
+  "analysis_git": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+  "analyzed": "2026-11-09T04:32:12+00:00",
+  "arms": [
+    "lm-byte-small-2822813d-s0",
+    "lm-bpe1024-small-eb29b8fb-s0"
+  ],
+  "caveats": [
+    "Not apples-to-apples in text seen: equal tokens per step means BPE sees ~3x more bytes.",
+    "BPE adds (1024-256) x 192 embedding parameters; the comparison is per step, not per parameter.",
+    "BPE merges are learned on the train split only."
+  ],
+  "criterion": "BPE val bpb upper CI < byte val bpb lower CI.",
+  "experiment": "tokenization",
+  "hypothesis": "At an equal optimizer-step and tokens-per-step budget, BPE-1024 reaches lower val bits-per-byte than byte-level, because each step covers more text.",
+  "missing_runs": [],
+  "observations": {
+    "bpe_bytes_per_token": 2.3760305437251956,
+    "bpe_val_bpb": 2.007116951404068,
+    "byte_val_bpb": 2.0858429544387227,
+    "bytes_seen_bpe_approx": 48661106,
+    "bytes_seen_byte": 20480000,
+    "params_bpe": 2016960,
+    "params_byte": 1869504
+  },
+  "plots": [
+    "curves.png"
+  ],
+  "profile": "standard",
+  "researcher_note": null,
+  "table": [
+    {
+      "best_step": 2500,
+      "device": "mps",
+      "ece": 0.028702500833558436,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.2574360370635986,
+      "params": 1869504,
+      "run_id": "lm-byte-small-2822813d-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.831149324936616,
+      "val_bpb": 2.0858429544387227,
+      "val_bpb_ci95": [
+        2.0743703245762806,
+        2.0977968779094742
+      ],
+      "val_loss": 1.445796162960027,
+      "val_ppl_token": 4.245230693138306,
+      "wall_time_s": 291.1
+    },
+    {
+      "best_step": 2400,
+      "device": "mps",
+      "ece": 0.05458109447150952,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.554764747619629,
+      "params": 2016960,
+      "run_id": "lm-bpe1024-small-eb29b8fb-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "bpe1024",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.620326910186007,
+      "val_bpb": 2.007116951404068,
+      "val_bpb_ci95": [
+        1.9930097470460664,
+        2.021355855225041
+      ],
+      "val_loss": 3.3055989285345486,
+      "val_ppl_token": 27.264866406094914,
+      "wall_time_s": 296.7
+    }
+  ],
+  "title": "Byte vs BPE-1024 tokenization",
+  "track": "language-model",
+  "verdict": "supported",
+  "verdict_detail": "BPE 2.007 vs byte 2.086 val bpb"
+}

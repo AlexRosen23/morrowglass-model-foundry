@@ -1,0 +1,63 @@
+{
+  "budget": {
+    "approx_flops_per_token": 33443328.0,
+    "approx_train_flops": 410951614464000.0,
+    "checkpoint_mb_with_adam": 55.54,
+    "params_non_embedding": 4721920,
+    "params_total": 4852992,
+    "train_tokens": 12288000,
+    "weights_mb_fp32": 18.51
+  },
+  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run break-overfit --profile standard",
+  "config_hash": "1ec37376d2211ec827a29c781bc86f515eb047d37b5dcb05a52c722aec96da4a",
+  "data": {
+    "bytes": {
+      "test": 39984,
+      "train": 239983,
+      "val": 39994
+    },
+    "dataset": "shakespeare-sample",
+    "dataset_hash": "08633e845811a38460ef4b0dd885fe1fa862f967091b26819961e39f20c808ae",
+    "token_counts": {
+      "test": 39984,
+      "train": 239983,
+      "val": 39994
+    },
+    "token_ids_sha256": {
+      "test": "bd0bff3e833c5626728336755806c5e4eda5d236128739c8caf2ac8bd662f27d",
+      "train": "240a9723ee4ab301e86b12f328e13cab4a88142c542c95b009dfa818fdcb7d76",
+      "val": "6298c3bfcb889e469390c8c6289b909dba04efb5c2bd6979a4e668937079be74"
+    },
+    "tokenizer": "byte",
+    "tokenizer_sha256": "1b69a917c1d77256241c558c278986705bcb023505ed7cff2667e8eedd5d55ec",
+    "vocab_size": 256
+  },
+  "device": "mps",
+  "finished": "2026-11-09T04:57:04+00:00",
+  "git": {
+    "branch": "feat/model-foundry",
+    "commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+    "dirty": false
+  },
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "cpu_count": 18,
+    "cuda_available": false,
+    "default_device": "mps",
+    "machine": "arm64",
+    "mps_available": true,
+    "mps_built": true,
+    "mps_usable": true,
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.15",
+    "ram_gb": 48.0,
+    "torch": "2.15.0",
+    "torch_threads": 4
+  },
+  "params": 4852992,
+  "resumed_from": null,
+  "run_id": "scarce-byte-medium-dropout-es-1ec37376-s0",
+  "seed": 0,
+  "started": "2026-11-09T04:52:07+00:00",
+  "status": "early_stopped"
+}

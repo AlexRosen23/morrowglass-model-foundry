@@ -1,0 +1,46 @@
+{
+  "best_step": 2900,
+  "best_val_iid_error": 0.8895,
+  "checkpoints": {
+    "best": {
+      "bytes": 5223401,
+      "path": "artifacts/checkpoints/digitsum-plain-98e90485-s0/best.pt",
+      "saved": "2026-11-09T04:43:38+00:00",
+      "sha256": "d05dba419b0eb96bdd5057c32e5cb26dd9e0ee64648f1338b51c0f37f8e2f308",
+      "step": 2900
+    },
+    "last": {
+      "bytes": 5223401,
+      "path": "artifacts/checkpoints/digitsum-plain-98e90485-s0/last.pt",
+      "saved": "2026-11-09T04:43:51+00:00",
+      "sha256": "9a50a76cbb43f87a7649f59615ebf4e9bba25eb45194967a85ba161e1122fe4e",
+      "step": 3000
+    }
+  },
+  "experiment": "digitsum",
+  "failure": null,
+  "final": {
+    "train": {
+      "accuracy": 0.10113333333333334,
+      "error": 0.8988666666666667,
+      "loss": 2.3026187283833823,
+      "n": 60000
+    },
+    "val_iid": {
+      "accuracy": 0.1105,
+      "error": 0.8895,
+      "loss": 2.302238525390625,
+      "n": 2000
+    }
+  },
+  "final_eval_on": "best checkpoint",
+  "finished": "2026-11-09T04:44:00+00:00",
+  "mean_tokens_per_s": 105264.8,
+  "params": 432768,
+  "run_id": "digitsum-plain-98e90485-s0",
+  "skipped_steps": 0,
+  "status": "completed",
+  "steps_completed": 3000,
+  "tokens_seen": 18432000,
+  "wall_time_s": 175.1
+}

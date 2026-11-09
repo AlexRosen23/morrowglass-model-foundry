@@ -70,7 +70,7 @@ def fetch_raw(dest: Path = RAW_PATH, url: str = SOURCE_URL) -> Path:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={"User-Agent": "morrowglass-corpus-fetch/0.1"})
-    with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 - fixed https URL
+    with urllib.request.urlopen(req, timeout=60) as resp:
         data = resp.read()
     write_verified(dest, data)
     return dest

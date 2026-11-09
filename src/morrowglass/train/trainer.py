@@ -105,8 +105,9 @@ def lr_at(step: int, cfg: TrainConfig) -> float:
 def build_task(cfg: TrainConfig) -> Task:
     if cfg.task == "lm":
         return LMTask(cfg.dataset, cfg.tokenizer, cfg.eval_windows)
-    if cfg.task == "digitsum":
-        return SumTask(cfg.model.get("block_size", 40), pos_augment=cfg.pos_augment)
+    if cfg.task in ("digitsum", "digitsum-scratchpad"):
+        return SumTask(cfg.model.get("block_size", 40), pos_augment=cfg.pos_augment,
+                       scratchpad=cfg.task == "digitsum-scratchpad")
     raise ValueError(f"unknown task {cfg.task!r}")
 
 
@@ -115,7 +116,8 @@ def build_model(cfg: TrainConfig, vocab_size: int) -> MorrowglassLM:
 
 
 def make_optimizer(model: MorrowglassLM, cfg: TrainConfig) -> torch.optim.Optimizer:
-    decay, no_decay = [], []
+    decay: list[torch.nn.Parameter] = []
+    no_decay: list[torch.nn.Parameter] = []
     seen: set[int] = set()
     for _, p in model.named_parameters():
         if not p.requires_grad or id(p) in seen:
@@ -376,7 +378,8 @@ class Trainer:
         meta.update({"status": status, "finished": summary["finished"]})
         write_json(self.run_dir / "metadata.json", meta)
         write_json(self.run_dir / "summary.json", summary)
-        self._say(f"{status} in {wall:.1f}s; best {self.task.primary_metric}={summary['best_' + self.task.primary_metric]}")
+        best = summary["best_" + self.task.primary_metric]
+        self._say(f"{status} in {wall:.1f}s; best {self.task.primary_metric}={best}")
         return summary
 
 

@@ -1,0 +1,37 @@
+# Defined but NOT enabled: GitHub Actions is disabled on this private repo (owner approval required).
+# The same checks run locally with `make ci`.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install (CPU-only torch wheels on Linux via the pytorch-cpu index in pyproject)
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run --frozen ruff check src tests
+      - name: Types
+        run: uv run --frozen mypy
+      - name: Tests (CPU)
+        run: uv run --frozen pytest -q -p no:warnings
+      - name: Smoke (offline sample, CPU)
+        run: make smoke
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: cd web && npm ci --no-audit --no-fund && npm run build

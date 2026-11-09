@@ -90,15 +90,18 @@ class SumTask:
 
     primary_metric = "val_iid_error"
 
-    def __init__(self, block_size: int, pos_augment: bool = False) -> None:
+    def __init__(self, block_size: int, pos_augment: bool = False, scratchpad: bool = False) -> None:
         from morrowglass.tokenizer.tokenizers import ByteTokenizer
 
-        self.tokenizer = ByteTokenizer()
+        self.tokenizer: Tokenizer = ByteTokenizer()
         self.block_size = block_size
         self.pos_augment = pos_augment
+        self.scratchpad = scratchpad
         self.examples = synthetic.generate()
-        self.data = {k: synthetic.encode_examples(v, block_size) for k, v in self.examples.items()}
-        self.lengths = {k: torch.tensor([len(e.text) - 1 for e in v]) for k, v in self.examples.items()}
+        enc = synthetic.encode_scratch if scratchpad else synthetic.encode_examples
+        text = synthetic.scratch_text if scratchpad else (lambda e: e.text)
+        self.data = {k: enc(v, block_size) for k, v in self.examples.items()}
+        self.lengths = {k: torch.tensor([len(text(e)) - 1 for e in v]) for k, v in self.examples.items()}
 
     def batch(self, batch_size: int, block_size: int, gen: torch.Generator) -> tuple[torch.Tensor, ...]:
         x, y = self.data["train"]
@@ -119,7 +122,46 @@ class SumTask:
         return xb, yb
 
     @torch.no_grad()
-    def _accuracy(self, model: MorrowglassLM, split: str, device: str) -> dict[str, float]:
+    def _scratch_accuracy(self, model: MorrowglassLM, split: str, device: str) -> dict[str, Any]:
+        """Autoregressive: the model's own running sums are fed back; only the digits are given.
+
+        Teacher-forcing the running sums would leak the previous answer into each step, so
+        the final-answer accuracy here is the honest end-to-end measure.
+        """
+        was = model.training
+        model.eval()
+        exs = self.examples[split]
+        by_n: dict[int, list[int]] = {}
+        for i, e in enumerate(exs):
+            by_n.setdefault(e.expr.count("+") + 1, []).append(i)
+        final_ok = steps_ok = steps = 0
+        for n_terms, idxs in sorted(by_n.items()):
+            digits = torch.tensor([[int(c) for c in exs[i].expr.split("+")] for i in idxs])
+            truth = digits.cumsum(1) % synthetic.MOD
+            seq = torch.empty((len(idxs), 0), dtype=torch.long)
+            preds = []
+            for k in range(n_terms):
+                step = torch.stack([digits[:, k] + ord("0"), torch.full((len(idxs),), ord(","))], 1)
+                seq = torch.cat([seq, step], 1)
+                logits = model(seq.to(device)).logits[:, -1].float().cpu()
+                digit_logits = logits[:, ord("0") : ord("9") + 1]  # restrict the read-out to digits
+                r = digit_logits.argmax(-1)
+                preds.append(r)
+                seq = torch.cat([seq, torch.stack([r + ord("0"), torch.full((len(idxs),), ord(";"))], 1)], 1)
+            P = torch.stack(preds, 1)
+            final_ok += int((P[:, -1] == truth[:, -1]).sum())
+            steps_ok += int((truth == P).sum())
+            steps += P.numel()
+        if was:
+            model.train()
+        acc = final_ok / len(exs)
+        return {"accuracy": acc, "error": 1 - acc, "step_accuracy": steps_ok / steps, "n": len(exs),
+                "loss": None}  # no likelihood under free-running decoding
+
+    @torch.no_grad()
+    def _accuracy(self, model: MorrowglassLM, split: str, device: str) -> dict[str, Any]:
+        if self.scratchpad:
+            return self._scratch_accuracy(model, split, device)
         was = model.training
         model.eval()
         x, y = self.data[split]
@@ -139,7 +181,10 @@ class SumTask:
 
     def evaluate(self, model: MorrowglassLM, device: str, full: bool = False) -> dict[str, Any]:
         v = self._accuracy(model, "val_iid", device)
-        return {"val_iid_error": v["error"], "val_iid_accuracy": v["accuracy"], "val_loss": v["loss"]}
+        out = {"val_iid_error": v["error"], "val_iid_accuracy": v["accuracy"], "val_loss": v["loss"]}
+        if self.scratchpad:
+            out["val_iid_step_accuracy"] = v["step_accuracy"]
+        return out
 
     def final_eval(self, model: MorrowglassLM, device: str) -> dict[str, Any]:
         """Train + in-distribution validation only; the OOD splits are locked test sets."""
@@ -159,4 +204,5 @@ class SumTask:
             "split_sizes": {k: len(v) for k, v in self.examples.items()},
             "task": synthetic.describe(),
             "pos_augment": self.pos_augment,
+            "format": "scratchpad (d,r;)*" if self.scratchpad else "plain (expr=answer)",
         }

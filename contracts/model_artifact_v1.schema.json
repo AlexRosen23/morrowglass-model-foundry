@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/AlexRosen23/morrowglass-model-foundry/contracts/model_artifact_v1.schema.json",
+  "title": "Morrowglass model artifact manifest v1",
+  "description": "Everything a deployment system needs to ingest a Morrowglass model without access to the producing repository.",
+  "type": "object",
+  "required": ["schema", "schema_version", "model_name", "model_version", "created", "producer", "artifact", "tokenizer", "architecture", "io", "evaluation", "tests", "license", "runtime", "limitations"],
+  "properties": {
+    "schema": {"const": "morrowglass.model_artifact"},
+    "schema_version": {"type": "string", "pattern": "1\\.[0-9]+\\.[0-9]+"},
+    "model_name": {"type": "string"},
+    "model_version": {"type": "string", "description": "The producing run id: <name>-<config-hash8>-s<seed>"},
+    "created": {"type": "string", "description": "ISO-8601 UTC"},
+    "producer": {
+      "type": "object",
+      "required": ["project", "git_commit", "git_dirty", "run_id"],
+      "properties": {
+        "project": {"type": "string"},
+        "git_commit": {"type": "string"},
+        "git_dirty": {"type": "boolean"},
+        "run_id": {"type": "string"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["path", "format", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string", "description": "Relative to the manifest's directory"},
+        "format": {"enum": ["pytorch-state-dict"]},
+        "sha256": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "bytes": {"type": "integer"},
+        "load": {"type": "string"}
+      }
+    },
+    "tokenizer": {
+      "type": "object",
+      "required": ["name", "sha256", "kind"],
+      "properties": {
+        "name": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "path": {"type": ["string", "null"]},
+        "kind": {"type": "string"}
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "required": ["family", "config", "params"],
+      "properties": {
+        "family": {"type": "string"},
+        "config": {
+          "type": "object",
+          "required": ["vocab_size", "block_size", "n_layer", "n_head", "d_model", "pos_encoding", "causal"],
+          "properties": {
+            "vocab_size": {"type": "integer"},
+            "block_size": {"type": "integer"},
+            "n_layer": {"type": "integer"},
+            "n_head": {"type": "integer"},
+            "d_model": {"type": "integer"},
+            "pos_encoding": {"enum": ["learned", "sinusoidal", "none"]},
+            "causal": {"type": "boolean"}
+          }
+        },
+        "params": {"type": "integer"}
+      }
+    },
+    "io": {
+      "type": "object",
+      "required": ["input", "output"],
+      "properties": {
+        "input": {"type": "object", "required": ["type", "dtype", "shape", "block_size"]},
+        "output": {"type": "object", "required": ["type", "dtype", "shape", "vocab_size", "semantics"]}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": ["dataset", "dataset_hash", "primary_metric", "val", "test"],
+      "properties": {
+        "dataset": {"type": "string"},
+        "dataset_hash": {"type": "string"},
+        "primary_metric": {"type": "string"},
+        "val": {"type": "object", "required": ["bits_per_byte", "ci95"]},
+        "test": {"type": ["object", "null"], "description": "null until the locked test split has been opened for this run"},
+        "test_access_log": {"type": "string"}
+      }
+    },
+    "tests": {"type": "array", "items": {"type": "string"}},
+    "license": {
+      "type": "object",
+      "required": ["code", "weights", "training_data"],
+      "properties": {"code": {"type": "string"}, "weights": {"type": "string"}, "training_data": {"type": "string"}}
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["python", "torch", "devices", "approx_memory_mb"],
+      "properties": {
+        "python": {"type": "string"},
+        "torch": {"type": "string"},
+        "devices": {"type": "array", "items": {"enum": ["cpu", "mps", "cuda"]}},
+        "approx_memory_mb": {"type": "number"}
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "budget": {
+    "approx_flops_per_token": 14166144.0,
+    "approx_train_flops": 290122629120000.0,
+    "checkpoint_mb_with_adam": 23.08,
+    "params_non_embedding": 1771200,
+    "params_total": 2016960,
+    "train_tokens": 20480000,
+    "weights_mb_fp32": 7.69
+  },
+  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run tokenization --profile standard",
+  "config_hash": "eb29b8fb6f384dc2787fdba42dd27dc1a309e2ffa67b45283fda5ee79e28bbe5",
+  "data": {
+    "bytes": {
+      "test": 377278,
+      "train": 4557058,
+      "val": 425674
+    },
+    "dataset": "shakespeare",
+    "dataset_hash": "a9b80ce5897befa12b26a8863a316dcfba034283fcc4fdec5eeeec58be675c8b",
+    "token_counts": {
+      "test": 161570,
+      "train": 1936032,
+      "val": 179154
+    },
+    "token_ids_sha256": {
+      "test": "6a1f85fbdd092f841c2926170c08bbdbf06581b094681081e656858a5eaa7260",
+      "train": "72138a1b3fdf89ec807fb64f9376c5513812a7c29c1143c59fb6fe14c603c06b",
+      "val": "bd102c905b23b7243fce2ef8a599bf192131920ff8cacbfac636544dfe5671b2"
+    },
+    "tokenizer": "bpe1024",
+    "tokenizer_sha256": "5d3ccb7ec33adca60fde5a61dfacb638f86c2273855702329e3b79de10bbd30a",
+    "vocab_size": 1024
+  },
+  "device": "mps",
+  "finished": "2026-11-09T04:14:37+00:00",
+  "git": {
+    "branch": "feat/model-foundry",
+    "commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+    "dirty": false
+  },
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "cpu_count": 18,
+    "cuda_available": false,
+    "default_device": "mps",
+    "machine": "arm64",
+    "mps_available": true,
+    "mps_built": true,
+    "mps_usable": true,
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.15",
+    "ram_gb": 48.0,
+    "torch": "2.15.0",
+    "torch_threads": 4
+  },
+  "params": 2016960,
+  "resumed_from": null,
+  "run_id": "lm-bpe1024-small-eb29b8fb-s0",
+  "seed": 0,
+  "started": "2026-11-09T04:09:39+00:00",
+  "status": "completed"
+}

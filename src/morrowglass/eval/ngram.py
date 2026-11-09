@@ -26,7 +26,7 @@ from morrowglass.eval.metrics import LN2, bootstrap_ci
 
 
 def pack(ids: np.ndarray, width: int) -> bytes:
-    dtype = {1: np.uint8, 2: ">u2"}[width]
+    dtype = np.dtype(np.uint8) if width == 1 else np.dtype(">u2")
     if int(ids.max(initial=0)) >= 256**width:
         raise ValueError("token id does not fit packing width")
     return ids.astype(dtype).tobytes()

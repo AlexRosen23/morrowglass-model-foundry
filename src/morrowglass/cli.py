@@ -11,6 +11,7 @@
     morrowglass bench RUN_ID               # inference latency / throughput / memory
     morrowglass generate RUN_ID "prompt"   # sample from a checkpoint
     morrowglass export-artifact RUN_ID     # contracts/model_artifact_v1 manifest
+    morrowglass lora [--approved]          # optional LoRA track (blocked without approval)
     morrowglass ledger                     # rebuild the SQLite index of runs
     morrowglass serve [--port 5100]        # API for the web UI
 """
@@ -21,7 +22,6 @@ import argparse
 import json
 import shutil
 import sys
-from pathlib import Path
 from typing import Any
 
 
@@ -67,6 +67,10 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--seed", type=int, default=0)
     ex = sub.add_parser("export-artifact")
     ex.add_argument("run_id")
+    lo = sub.add_parser("lora", help="optional pretrained + LoRA track (needs --approved: model download)")
+    lo.add_argument("--model", default="distilgpt2")
+    lo.add_argument("--steps", type=int, default=300)
+    lo.add_argument("--approved", action="store_true")
     sub.add_parser("ledger")
     sub.add_parser("report")
     sv = sub.add_parser("serve")
@@ -145,6 +149,14 @@ def main(argv: list[str] | None = None) -> int:
         from morrowglass.contracts import export_artifact
 
         _print(export_artifact(args.run_id))
+    elif args.cmd == "lora":
+        from morrowglass.finetune.lora import run_lora
+
+        try:
+            _print(run_lora(args.model, approved=args.approved, steps=args.steps))
+        except PermissionError as e:
+            print(f"BLOCKED: {e}", file=sys.stderr)
+            return 3
     elif args.cmd == "ledger":
         from morrowglass.api.store import Store
 

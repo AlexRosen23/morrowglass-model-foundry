@@ -136,6 +136,36 @@ def build(name: str, profile: str = "standard") -> Experiment:
             ["Chance accuracy is 10%.", "Synthetic success is not evidence of general reasoning."],
             track="algorithmic",
         )
+    if name == "digitsum-scratchpad":
+        steps = {"smoke": 40, "standard": 3000, "extended": 8000}[p]
+        model = {"n_layer": 2, "n_head": 4, "d_model": 128, "block_size": 72} if p != "smoke" else \
+            {"n_layer": 1, "n_head": 2, "d_model": 32, "block_size": 72}
+        arms = []
+        for seed in (0, 1):
+            for aug in (False, True):
+                arms.append(TrainConfig(
+                    name=f"digitsum-sp-{'posaug' if aug else 'plain'}", experiment=name,
+                    task="digitsum-scratchpad", dataset="synthetic", tokenizer="byte", model=dict(model),
+                    batch_size=128, max_steps=steps, lr=1e-3, warmup_steps=min(200, steps // 10),
+                    weight_decay=0.1, eval_interval=max(10, steps // 15), checkpoint_interval=steps,
+                    log_interval=max(5, steps // 100), seed=seed, pos_augment=aug, profile=p))
+        return Experiment(
+            name, "Algorithmic transfer, follow-up: running-sum scratchpad under length shift",
+            "Registered 2026-11-08 AFTER the plain digit-sum runs stayed at chance (loss = ln 10). With an "
+            "interleaved running-sum scratchpad ('3,3;9,2;4,6;'), every step is local, so the 2-layer model "
+            "learns the rule in-distribution (> 95% final-answer accuracy, autoregressive, on 3-6 terms). "
+            "With learned absolute positions it still fails on longer inputs (12-16 terms < 50%) because "
+            "those positions were never trained; random position offsets during training raise OOD "
+            "accuracy for both seeds.",
+            "Plain-position arms: val_iid acc > 0.95 and test_ood_far acc < 0.5. Pos-aug arms: OOD near and "
+            "far accuracy higher than the plain arm with the same seed.",
+            arms,
+            ["Follow-up designed after seeing a failure; the original digit-sum experiment is kept and reported.",
+             "Evaluation is autoregressive: the model's own running sums are fed back; read-out restricted "
+             "to digit tokens.", "Chance accuracy is 10%.",
+             "Synthetic success is not evidence of general reasoning."],
+            track="algorithmic",
+        )
     if name == "break-lr":
         steps = {"smoke": 20, "standard": 400, "extended": 400}[p]
         common = dict(max_steps=steps, eval_interval=max(10, steps // 10), checkpoint_interval=steps)
@@ -184,5 +214,5 @@ def build(name: str, profile: str = "standard") -> Experiment:
     raise KeyError(f"unknown experiment {name!r}; known: {', '.join(ALL)}")
 
 
-ALL = ["scratch", "tokenization", "capacity", "optimization", "digitsum", "break-lr", "break-mask",
-       "break-overfit"]
+ALL = ["scratch", "tokenization", "capacity", "optimization", "digitsum", "digitsum-scratchpad", "break-lr",
+       "break-mask", "break-overfit"]

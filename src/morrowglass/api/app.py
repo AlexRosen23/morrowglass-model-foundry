@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 
 from morrowglass.api.contract import build_router
 from morrowglass.api.store import Store
+from morrowglass.data.corpus import dataset_dir
 from morrowglass.hardware import hardware_report
 from morrowglass.inference.generate import attention_maps, generate
 from morrowglass.model.transformer import ModelConfig, blueprint, compute_budget
@@ -47,8 +48,10 @@ async def lifespan(_: FastAPI):  # type: ignore[no-untyped-def]
         store.rebuild_index()
     except Exception as e:  # pragma: no cover - index is optional
         print(f"ledger index not rebuilt: {e}", file=sys.stderr)
-    if os.environ.get("MORROWGLASS_WARM_BASELINE", "1") == "1" and store.baselines():
+    if (os.environ.get("MORROWGLASS_WARM_BASELINE", "1") == "1" and store.baselines()
+            and (dataset_dir("shakespeare") / "train.txt").exists()):
         # Fit the demo's n-gram baseline in the background so the first Generate is not blocked.
+        # (A fresh clone has no full corpus until `make data`; then the baseline is reported as unavailable.)
         threading.Thread(target=lambda: store.baseline_model("shakespeare", "byte"), daemon=True).start()
     yield
 
@@ -61,7 +64,7 @@ app.include_router(build_router(lambda: store))
 # MORROWGLASS_DEFAULT_MODEL: model used when a request names none (needed by the harness's remote tokenizer).
 # MORROWGLASS_ENABLE_HF=1: also serve the pretrained reference (hf:distilgpt2) from the local HF cache only.
 _hf_backends: dict[str, Backend] = {}
-_backends: OrderedDict[tuple[int, str], Backend] = OrderedDict()  # one backend (and lock) per served model
+_backends: OrderedDict[tuple[int, str, int | None], Backend] = OrderedDict()  # one backend (and lock) per served model
 _hf_lock = threading.Lock()
 
 
@@ -81,11 +84,17 @@ def resolve_backend(model: str | None) -> Backend:
                 except OSError as e:
                     raise APIError(404, f"{model} is not in the local Hugging Face cache", "model") from e
             return _hf_backends[model]
-    key = (id(store), model)
+    try:
+        stamp = store.checkpoint_stamp(model)
+    except KeyError as e:
+        raise APIError(404, f"unknown model {model!r}", "model", "model_not_found") from e
+    key = (id(store), model, stamp)  # a re-trained checkpoint gets a fresh backend
     with _hf_lock:
         if key in _backends:
             _backends.move_to_end(key)
             return _backends[key]
+        for stale in [k for k in _backends if k[:2] == key[:2]]:
+            del _backends[stale]
     try:
         run = store.run(model)
         if run["config"]["train"]["task"] != "lm":
@@ -296,8 +305,11 @@ def api_generate(req: GenerateRequest) -> dict[str, Any]:
     out["label"] = "model output (sampled live from a saved checkpoint)"
     cfg = rec["config"]["train"]
     if req.with_baseline and cfg["task"] == "lm":
-        out["baseline"] = store.baseline_generate(cfg["dataset"], cfg["tokenizer"], req.prompt,
-                                                  min(req.max_new_tokens, 200), req.seed, req.temperature)
+        try:
+            out["baseline"] = store.baseline_generate(cfg["dataset"], cfg["tokenizer"], req.prompt,
+                                                      min(req.max_new_tokens, 200), req.seed, req.temperature)
+        except FileNotFoundError as e:
+            out["baseline"] = {"model": "baseline unavailable", "text": "", "error": str(e)}
     return out
 
 
@@ -310,8 +322,11 @@ def api_baseline_generate(req: GenerateRequest) -> dict[str, Any]:
         raise _404(e) from e
     if cfg["task"] != "lm":
         raise HTTPException(400, "baselines exist only for the language-model task")
-    out = store.baseline_generate(cfg["dataset"], cfg["tokenizer"], req.prompt, min(req.max_new_tokens, 200),
-                                  req.seed, req.temperature)
+    try:
+        out = store.baseline_generate(cfg["dataset"], cfg["tokenizer"], req.prompt, min(req.max_new_tokens, 200),
+                                      req.seed, req.temperature)
+    except FileNotFoundError as e:
+        raise HTTPException(409, str(e)) from e
     out["label"] = "baseline output (sampled live from n-gram counts on the train split)"
     return out
 

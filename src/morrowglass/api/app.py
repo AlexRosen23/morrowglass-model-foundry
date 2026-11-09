@@ -105,7 +105,9 @@ def resolve_backend(model: str | None) -> Backend:
     except FileNotFoundError as e:
         raise APIError(404, str(e), "model", "model_not_found") from e
     with _hf_lock:
-        b = _backends.setdefault(key, MorrowglassBackend(model, net, tok, run["provenance"]))
+        prov = run["provenance"] if run["checkpoint_origin"] != "reproduced" else \
+            f"{run['provenance']} record; served weights re-trained by `morrowglass reproduce`"
+        b = _backends.setdefault(key, MorrowglassBackend(model, net, tok, prov))
         while len(_backends) > 4:
             _backends.popitem(last=False)
     return b
@@ -302,7 +304,9 @@ def api_generate(req: GenerateRequest) -> dict[str, Any]:
                    top_k=req.top_k, seed=req.seed)
     out["run_id"] = req.run_id
     out["provenance"] = rec["provenance"]
-    out["label"] = "model output (sampled live from a saved checkpoint)"
+    out["checkpoint_origin"] = rec["checkpoint_origin"]
+    out["label"] = ("model output (sampled live from a saved checkpoint)" if rec["checkpoint_origin"] == "original"
+                    else "model output (sampled live from a re-trained checkpoint, not the original run's weights)")
     cfg = rec["config"]["train"]
     if req.with_baseline and cfg["task"] == "lm":
         try:
@@ -349,6 +353,7 @@ def api_attention(req: AttentionRequest) -> dict[str, Any]:
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     out["run_id"] = req.run_id
+    out["checkpoint_origin"] = store.checkpoint_origin(req.run_id)
     return out
 
 

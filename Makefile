@@ -92,7 +92,7 @@ export-hf: ## Hub-compatible folders (safetensors + config + model card); local 
 serving-report: ## docs/SERVING_RESULTS.md from the saved serving records
 	$(MG) serving-report
 
-reproduce-scratch: ## Re-train the flagship into reports/reproduce/ and compare with the committed run (~5 min on MPS)
+reproduce-scratch: ## Re-train the flagship into reports/reproduce/, compare with the record, install weights if none (~5 min)
 	$(MG) data prepare --fetch
 	$(MG) reproduce $(FLAGSHIP)
 

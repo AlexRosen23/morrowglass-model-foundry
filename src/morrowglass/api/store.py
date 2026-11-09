@@ -79,6 +79,7 @@ class Store:
                     "git_commit": m["git"]["commit"], "git_dirty": m["git"]["dirty"], "device": m["device"],
                     "started": m["started"], "finished": s.get("finished"),
                     "has_checkpoint": (cdir / d.name / "best.pt").exists(),
+                    "checkpoint_reproduced": (cdir / d.name / "REPRODUCED.json").exists(),
                     # Without the causal mask the windowed val metric is leaky (the model can read the answer).
                     "causal": bool(c.get("model", {}).get("causal", True)),
                     "test_opened": (d / "test_eval.json").exists(),
@@ -92,7 +93,13 @@ class Store:
             p = rd / f"{name}.json"
             rec[name] = read_json(p) if p.exists() else None
         rec["has_checkpoint"] = (cd / "best.pt").exists()
+        rec["checkpoint_origin"] = self.checkpoint_origin(run_id) if rec["has_checkpoint"] else None
         return rec
+
+    def checkpoint_origin(self, run_id: str) -> str:
+        """'original' for the checkpoint the run produced, 'reproduced' for one re-trained by `reproduce`."""
+        _, _, cd = self._locate(run_id)
+        return "reproduced" if (cd / "REPRODUCED.json").exists() else "original"
 
     def metrics(self, run_id: str) -> list[dict[str, Any]]:
         _, rd, _ = self._locate(run_id)
@@ -106,7 +113,8 @@ class Store:
         con = sqlite3.connect(tmp)
         cols = ["run_id", "provenance", "experiment", "name", "status", "task", "tokenizer", "dataset", "seed",
                 "params", "steps", "tokens_seen", "wall_time_s", "val_bpb", "val_iid_acc", "git_commit",
-                "git_dirty", "device", "started", "finished", "has_checkpoint", "causal", "test_opened"]
+                "git_dirty", "device", "started", "finished", "has_checkpoint", "checkpoint_reproduced", "causal",
+                "test_opened"]
         con.execute(f"CREATE TABLE runs ({', '.join(cols)}, PRIMARY KEY(run_id, provenance))")
         con.executemany(f"INSERT INTO runs VALUES ({', '.join('?' * len(cols))})",
                         [tuple(r[c] for c in cols) for r in runs])

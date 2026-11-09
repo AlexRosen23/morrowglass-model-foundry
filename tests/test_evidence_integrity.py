@@ -89,3 +89,27 @@ def test_runs_flag_non_causal_models(store_client: tuple[TestClient, Store, Path
     client, _, _, rid = store_client
     row = next(r for r in client.get("/api/runs").json()["runs"] if r["run_id"] == rid)
     assert row["causal"] is True
+
+
+def test_reproduced_checkpoint_is_installed_and_labelled(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    committed, ck = tmp_path / "runs", tmp_path / "ckpt"
+    rid = train_from_config(tiny_cfg(max_steps=20, experiment="unit"), quiet=True, runs_dir=committed,
+                            ckpt_root=ck)["run_id"]
+    original = (ck / rid / "best.pt").read_bytes()
+    # A checkpoint that already exists (the original) is never replaced.
+    r = runner.reproduce_run(rid, device="cpu", quiet=True, runs_dir=committed, out_dir=tmp_path / "rep",
+                             ckpt_root=tmp_path / "rep-ckpt", install_into=ck)
+    assert r["installed_checkpoint"] is None and (ck / rid / "best.pt").read_bytes() == original
+    # A fresh clone (no weights) gets the re-trained checkpoint, with a marker the API reports.
+    (ck / rid / "best.pt").unlink()
+    r = runner.reproduce_run(rid, device="cpu", quiet=True, runs_dir=committed, out_dir=tmp_path / "rep2",
+                             ckpt_root=tmp_path / "rep2-ckpt", install_into=ck)
+    assert r["installed_checkpoint"] and read_json(ck / rid / "REPRODUCED.json")["origin"] == "reproduced"
+    st = Store(sources={"measured": (committed, ck), "smoke": (tmp_path / "none", tmp_path / "none")},
+               index_path=tmp_path / "idx.sqlite", experiments_dir=tmp_path / "exp")
+    monkeypatch.setattr(app_module, "store", st)
+    client = TestClient(app_module.app)
+    g = client.post("/api/generate", json={"run_id": rid, "prompt": "KING:", "max_new_tokens": 4}).json()
+    assert g["checkpoint_origin"] == "reproduced" and "re-trained" in g["label"]
+    row = next(x for x in client.get("/api/runs").json()["runs"] if x["run_id"] == rid)
+    assert row["checkpoint_reproduced"] is True

@@ -24,6 +24,7 @@ from morrowglass.train.trainer import (
     RUNS_DIR,
     TrainConfig,
     build_task,
+    load_checkpoint,
     load_model_from_checkpoint,
     train_from_config,
 )
@@ -201,11 +202,17 @@ def run_experiment(name: str, profile: str = "standard", approved: bool = False,
 
 
 def reproduce_run(run_id: str, device: str = "auto", quiet: bool = False, runs_dir: Path = RUNS_DIR,
-                  out_dir: Path = REPRODUCE_DIR, ckpt_root: Path = REPRODUCE_CKPT) -> dict[str, Any]:
+                  out_dir: Path = REPRODUCE_DIR, ckpt_root: Path = REPRODUCE_CKPT,
+                  install_into: Path | None = CHECKPOINT_ROOT) -> dict[str, Any]:
     """Re-train a committed run from its saved config into ``out_dir`` and compare with the committed record.
 
     The committed run directory is only read. The verdict is whether the reproduced validation bits-per-byte
     falls inside the committed run's 95% bootstrap interval (MPS kernels are not bit-deterministic).
+
+    Weights are not in git, so a fresh clone cannot sample the committed models. When the reproduction passes
+    and ``install_into`` has no checkpoint for this run, the re-trained best checkpoint is copied there with a
+    ``REPRODUCED.json`` marker; the API then labels everything served from it as re-trained weights. An
+    existing (original) checkpoint is never replaced.
     """
     committed_dir = runs_dir / run_id
     if not (committed_dir / "summary.json").exists():
@@ -239,6 +246,22 @@ def reproduce_run(run_id: str, device: str = "auto", quiet: bool = False, runs_d
         report["val_iid_accuracy"] = {"committed": a_acc, "reproduced": b_acc, "difference": b_acc - a_acc}
         report["verdict"] = "reproduced" if abs(b_acc - a_acc) <= 0.02 else "not reproduced"
         report["criterion"] = "|reproduced - committed| val_iid accuracy <= 0.02"
+    report["installed_checkpoint"] = None
+    target = install_into / run_id if install_into is not None else None
+    if target is not None and report["verdict"] == "reproduced" and not (target / "best.pt").exists():
+        import shutil
+
+        target.mkdir(parents=True, exist_ok=True)
+        for name in ("best.pt", "best.sha256.json"):
+            shutil.copyfile(ckpt_root / run_id / name, target / name)
+        load_checkpoint(target / "best.pt")  # verify the copy against its recorded hash
+        marker = {"run_id": run_id, "origin": "reproduced", "reproduced": report["reproduced"],
+                  "device": report["device"], "git": report["git"]["commit"],
+                  "note": "Re-trained from the committed config; not the original checkpoint. Its metrics are in "
+                          f"reports/reproduce/{run_id}.json; the committed record describes the original run.",
+                  **({"val_bpb": report["val_bpb"]} if "val_bpb" in report else {})}
+        write_json(target / "REPRODUCED.json", marker)
+        report["installed_checkpoint"] = str(target)
     write_json(out_dir / f"{run_id}.json", report)
     return report
 

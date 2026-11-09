@@ -43,6 +43,7 @@ def test_export_hf_from_a_real_checkpoint(tmp_path: Path, monkeypatch: pytest.Mo
     info = export_hf(rid, out_root=tmp_path / "hf", card_root=tmp_path / "cards", runs_dir=runs, ckpt_root=ck)
     assert info["roundtrip_max_abs_logit_diff"] == 0.0 and info["published"] is False
     assert "hf upload" in info["publish_command_after_owner_approval"] and "--private" in publish_command(rid)
+    assert publish_command("lm-byte-small-2822813d-s0") != publish_command("lm-byte-small-240f8c28-s0")
     base, _ = load_model_from_checkpoint(ck / rid / "best.pt")
     re = MorrowglassHubLM.from_pretrained(tmp_path / "hf" / rid)
     x = torch.randint(0, 256, (1, 32))

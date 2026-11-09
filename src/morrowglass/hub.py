@@ -47,7 +47,8 @@ class MorrowglassHubLM(
 
 
 def hub_repo_name(run_id: str) -> str:
-    return "morrowglass-" + run_id.rsplit("-", 2)[0]
+    """Unique per run: the standard and extended flagship share a name prefix but are different weights."""
+    return f"morrowglass-{run_id}"
 
 
 def publish_command(run_id: str, owner: str = "AlexRosen23") -> str:

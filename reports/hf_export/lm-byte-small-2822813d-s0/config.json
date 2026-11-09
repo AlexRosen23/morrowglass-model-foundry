@@ -1,0 +1,13 @@
+{
+  "bias": false,
+  "block_size": 256,
+  "causal": true,
+  "d_ff": null,
+  "d_model": 192,
+  "dropout": 0.0,
+  "n_head": 4,
+  "n_layer": 4,
+  "pos_encoding": "learned",
+  "tie_weights": true,
+  "vocab_size": 256
+}

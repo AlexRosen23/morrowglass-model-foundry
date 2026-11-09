@@ -1,0 +1,34 @@
+{
+  "export_git": {
+    "branch": "feat/ai-engineer-readiness",
+    "commit": "9fca106b6479698caadc5c7737949c36858e2735",
+    "dirty": false
+  },
+  "exported": "2026-11-09T19:19:19+00:00",
+  "files": {
+    "README.md": {
+      "bytes": 4754,
+      "sha256": "704b9344b25e0ae844cf663887895024795049dfbb6c5ccc492fdccb22e8a26c"
+    },
+    "config.json": {
+      "bytes": 214,
+      "sha256": "bdeba050715e18ec79915e261ea8895e243db36e094b44a5497814681ca9649b"
+    },
+    "model.safetensors": {
+      "bytes": 7480488,
+      "sha256": "d5607e1ddfcf3de492a9d5cf68deda7d7c5043235c344f2c58662f85047ecd9c"
+    }
+  },
+  "format": "huggingface_hub PyTorchModelHubMixin (model.safetensors + config.json)",
+  "load": "morrowglass.hub.MorrowglassHubLM.from_pretrained(<folder or repo id>)",
+  "publish_command_after_owner_approval": "uv run hf upload AlexRosen23/morrowglass-lm-byte-small-2822813d-s0 artifacts/hf_export/lm-byte-small-2822813d-s0 . --repo-type model --private",
+  "published": false,
+  "roundtrip_max_abs_logit_diff": 0.0,
+  "run_id": "lm-byte-small-2822813d-s0",
+  "source_checkpoint_sha256": "cdf945992983bc45faace8423f474df9029af7e1654c38f9af3507884b4ab550",
+  "tokenizer": {
+    "file": null,
+    "name": "byte",
+    "sha256": "1b69a917c1d77256241c558c278986705bcb023505ed7cff2667e8eedd5d55ec"
+  }
+}

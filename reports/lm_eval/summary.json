@@ -1,0 +1,233 @@
+{
+  "caveats": [
+    "lambada needs the exact last word of an English news/fiction passage; the scratch models saw only Shakespeare and, at byte level, 256 bytes of context, so near-zero accuracy is expected.",
+    "distilgpt2 sees 1,024 BPE tokens of context; the scratch byte models see 256 bytes. Not a fair fight, and not meant to be: the point is comparable plumbing.",
+    "distilgpt2's pretraining data (OpenWebText) may overlap with Wikipedia-derived and Shakespeare text."
+  ],
+  "checks": {
+    "a_plumbing_within_0.03": true,
+    "b_lambada_below_0.05_and_distilgpt2": true,
+    "b_wikitext_bpb_above_distilgpt2": true
+  },
+  "criterion": "(a) |harness bpb - summary val bpb| < 0.03 for every scratch run. (b) lambada acc < 0.05 and < distilgpt2's, wikitext bpb > distilgpt2's, for every scratch run. If distilgpt2 cannot run, (b) is judged on the 0.05 bound alone and says so.",
+  "evaluation": "lm-eval-harness",
+  "hypothesis": "(a) Plumbing: for each scratch model, the harness's bits_per_byte on our validation split (custom task morrowglass_shakespeare_val) is within 0.03 of that run's own val bpb in summary.json. (b) Expected weakness: every scratch model scores lambada_openai accuracy < 0.05 and below distilgpt2, and a higher wikitext bits_per_byte than distilgpt2.",
+  "missing": [],
+  "models": {
+    "hf:distilgpt2": {
+      "harness_git_hash": "3987474",
+      "lambada_acc": 0.24975742286046962,
+      "lambada_acc_stderr": 0.0060307611528559344,
+      "lambada_perplexity": 96.84835033774978,
+      "lm_eval_version": "0.4.13",
+      "meta": {
+        "command": ".venv-lmeval/bin/lm_eval run --model local-completions --model_args base_url=http://127.0.0.1:5102/v1/completions,model=hf:distilgpt2,tokenizer_backend=remote,tokenized_requests=True,max_length=1024,num_concurrent=1,max_retries=3,timeout=120 --tasks lambada_openai,wikitext,morrowglass_shakespeare_val --include_path eval/tasks --batch_size 1 --num_fewshot 0 --seed 1234 --output_path reports/lm_eval/hf_distilgpt2 --log_samples",
+        "finished": "2026-11-09T19:18:02+00:00",
+        "git": {
+          "branch": "feat/ai-engineer-readiness",
+          "commit": "39874747e31d4ec7d4233b618e5ba6544ca5deb9",
+          "dirty": false
+        },
+        "limit": null,
+        "max_length": 1024,
+        "model": "hf:distilgpt2",
+        "prefix_token_id": null,
+        "samples_outside_git": {
+          "samples_lambada_openai_2026-11-09T13-18-00.054045.jsonl": {
+            "bytes": 6300727,
+            "path": "artifacts/lm_eval_samples/hf_distilgpt2/samples_lambada_openai_2026-11-09T13-18-00.054045.jsonl",
+            "sha256": "5ef71b285efc60fc6371535fe1de03ba92774511b41cd8cdbdd046e5476d6b30"
+          },
+          "samples_morrowglass_shakespeare_val_2026-11-09T13-18-00.054045.jsonl": {
+            "bytes": 1323751,
+            "path": "artifacts/lm_eval_samples/hf_distilgpt2/samples_morrowglass_shakespeare_val_2026-11-09T13-18-00.054045.jsonl",
+            "sha256": "6ae1c9bc37056fe7e21afb04f44953515f682c42a90fad98d3f2df5b32a311f9"
+          },
+          "samples_wikitext_2026-11-09T13-18-00.054045.jsonl": {
+            "bytes": 3831377,
+            "path": "artifacts/lm_eval_samples/hf_distilgpt2/samples_wikitext_2026-11-09T13-18-00.054045.jsonl",
+            "sha256": "10545a5b46f91ff4b2290a93d4607d949614870cab57b3ef9d9538fefb7f6317"
+          }
+        },
+        "server_command": "-m morrowglass.cli serve --port 5102 --model hf:distilgpt2 --enable-hf",
+        "wall_time_s": 3287.8
+      },
+      "n_samples": {
+        "lambada_openai": 5153,
+        "morrowglass_shakespeare_val": 1,
+        "wikitext": 62
+      },
+      "shakespeare_val_bits_per_byte": 1.8364883622109287,
+      "wikitext_bits_per_byte": 1.06923885171237,
+      "wikitext_word_perplexity": 52.62593228156426
+    },
+    "lm-bpe1024-small-eb29b8fb-s0": {
+      "harness_git_hash": "3987474",
+      "harness_minus_own_val_bpb": 0.000884827959841683,
+      "lambada_acc": 0.0,
+      "lambada_acc_stderr": 0.0,
+      "lambada_perplexity": 3329451560.8530903,
+      "lm_eval_version": "0.4.13",
+      "meta": {
+        "command": ".venv-lmeval/bin/lm_eval run --model local-completions --model_args base_url=http://127.0.0.1:5102/v1/completions,model=lm-bpe1024-small-eb29b8fb-s0,tokenizer_backend=remote,tokenized_requests=True,max_length=256,num_concurrent=1,max_retries=3,timeout=120,custom_prefix_token_id=198 --tasks lambada_openai,wikitext,morrowglass_shakespeare_val --include_path eval/tasks --batch_size 1 --num_fewshot 0 --seed 1234 --output_path reports/lm_eval/lm-bpe1024-small-eb29b8fb-s0 --log_samples",
+        "finished": "2026-11-09T18:22:55+00:00",
+        "git": {
+          "branch": "feat/ai-engineer-readiness",
+          "commit": "39874747e31d4ec7d4233b618e5ba6544ca5deb9",
+          "dirty": false
+        },
+        "limit": null,
+        "max_length": 256,
+        "model": "lm-bpe1024-small-eb29b8fb-s0",
+        "prefix_token_id": 198,
+        "samples_outside_git": {
+          "samples_lambada_openai_2026-11-09T12-22-52.233941.jsonl": {
+            "bytes": 6305899,
+            "path": "artifacts/lm_eval_samples/lm-bpe1024-small-eb29b8fb-s0/samples_lambada_openai_2026-11-09T12-22-52.233941.jsonl",
+            "sha256": "7a0856cb47367e34651483f5ed39e1735f64a5d3fcae929e052fda6ad492bf3c"
+          },
+          "samples_morrowglass_shakespeare_val_2026-11-09T12-22-52.233941.jsonl": {
+            "bytes": 1323751,
+            "path": "artifacts/lm_eval_samples/lm-bpe1024-small-eb29b8fb-s0/samples_morrowglass_shakespeare_val_2026-11-09T12-22-52.233941.jsonl",
+            "sha256": "550b5dce4e943614e8195fe8b74996b3adfcbbf40ac7efa171e8c04fa9e0e8df"
+          },
+          "samples_wikitext_2026-11-09T12-22-52.233941.jsonl": {
+            "bytes": 3831417,
+            "path": "artifacts/lm_eval_samples/lm-bpe1024-small-eb29b8fb-s0/samples_wikitext_2026-11-09T12-22-52.233941.jsonl",
+            "sha256": "1fd61902c86a223deb455eb4e6c18d05d96c05623facbf5fd7ba8e406c918417"
+          }
+        },
+        "server_command": "-m morrowglass.cli serve --port 5102 --model lm-bpe1024-small-eb29b8fb-s0",
+        "wall_time_s": 911.4
+      },
+      "n_samples": {
+        "lambada_openai": 5153,
+        "morrowglass_shakespeare_val": 1,
+        "wikitext": 62
+      },
+      "own_val_bpb": 2.007116951404068,
+      "shakespeare_val_bits_per_byte": 2.0080017793639096,
+      "wikitext_bits_per_byte": 3.890929372170501,
+      "wikitext_word_perplexity": 1833987.9867137386
+    },
+    "lm-byte-small-240f8c28-s0": {
+      "harness_git_hash": "3987474",
+      "harness_minus_own_val_bpb": -0.000687431113513437,
+      "lambada_acc": 0.0007762468464971861,
+      "lambada_acc_stderr": 0.0003880104050205483,
+      "lambada_perplexity": 5834779121.079905,
+      "lm_eval_version": "0.4.13",
+      "meta": {
+        "command": ".venv-lmeval/bin/lm_eval run --model local-completions --model_args base_url=http://127.0.0.1:5102/v1/completions,model=lm-byte-small-240f8c28-s0,tokenizer_backend=remote,tokenized_requests=True,max_length=256,num_concurrent=1,max_retries=3,timeout=120,custom_prefix_token_id=10 --tasks lambada_openai,wikitext,morrowglass_shakespeare_val --include_path eval/tasks --batch_size 1 --num_fewshot 0 --seed 1234 --output_path reports/lm_eval/lm-byte-small-240f8c28-s0 --log_samples",
+        "finished": "2026-11-09T18:07:13+00:00",
+        "git": {
+          "branch": "feat/ai-engineer-readiness",
+          "commit": "39874747e31d4ec7d4233b618e5ba6544ca5deb9",
+          "dirty": false
+        },
+        "limit": null,
+        "max_length": 256,
+        "model": "lm-byte-small-240f8c28-s0",
+        "prefix_token_id": 10,
+        "samples_outside_git": {
+          "samples_lambada_openai_2026-11-09T12-07-09.454161.jsonl": {
+            "bytes": 6304955,
+            "path": "artifacts/lm_eval_samples/lm-byte-small-240f8c28-s0/samples_lambada_openai_2026-11-09T12-07-09.454161.jsonl",
+            "sha256": "1c981351131fdd52cf5e46d0d60c498802922576b01733810810b15167b57ef0"
+          },
+          "samples_morrowglass_shakespeare_val_2026-11-09T12-07-09.454161.jsonl": {
+            "bytes": 1323746,
+            "path": "artifacts/lm_eval_samples/lm-byte-small-240f8c28-s0/samples_morrowglass_shakespeare_val_2026-11-09T12-07-09.454161.jsonl",
+            "sha256": "9adca0c7bf10bd86ffbef537a94d9f4dd2c65f9f998b616eba673875bbe3cfe1"
+          },
+          "samples_wikitext_2026-11-09T12-07-09.454161.jsonl": {
+            "bytes": 3831367,
+            "path": "artifacts/lm_eval_samples/lm-byte-small-240f8c28-s0/samples_wikitext_2026-11-09T12-07-09.454161.jsonl",
+            "sha256": "e799b32c81161868ebd3bc5d1655d03fad2a7b7516b62f59a3639533c6b497eb"
+          }
+        },
+        "server_command": "-m morrowglass.cli serve --port 5102 --model lm-byte-small-240f8c28-s0",
+        "wall_time_s": 1600.0
+      },
+      "n_samples": {
+        "lambada_openai": 5153,
+        "morrowglass_shakespeare_val": 1,
+        "wikitext": 62
+      },
+      "own_val_bpb": 1.99331295184674,
+      "shakespeare_val_bits_per_byte": 1.9926255207332266,
+      "wikitext_bits_per_byte": 4.464188558624253,
+      "wikitext_word_perplexity": 15353113.963500183
+    },
+    "lm-byte-small-2822813d-s0": {
+      "harness_git_hash": "3987474",
+      "harness_minus_own_val_bpb": -0.0011715905540117255,
+      "lambada_acc": 0.00019406171162429653,
+      "lambada_acc_stderr": 0.00019406171162429653,
+      "lambada_perplexity": 62703576.38475796,
+      "lm_eval_version": "0.4.13",
+      "meta": {
+        "command": ".venv-lmeval/bin/lm_eval run --model local-completions --model_args base_url=http://127.0.0.1:5102/v1/completions,model=lm-byte-small-2822813d-s0,tokenizer_backend=remote,tokenized_requests=True,max_length=256,num_concurrent=1,max_retries=3,timeout=120,custom_prefix_token_id=10 --tasks lambada_openai,wikitext,morrowglass_shakespeare_val --include_path eval/tasks --batch_size 1 --num_fewshot 0 --seed 1234 --output_path reports/lm_eval/lm-byte-small-2822813d-s0 --log_samples",
+        "finished": "2026-11-09T17:39:49+00:00",
+        "git": {
+          "branch": "feat/ai-engineer-readiness",
+          "commit": "39874747e31d4ec7d4233b618e5ba6544ca5deb9",
+          "dirty": false
+        },
+        "limit": null,
+        "max_length": 256,
+        "model": "lm-byte-small-2822813d-s0",
+        "prefix_token_id": 10,
+        "samples_outside_git": {
+          "samples_lambada_openai_2026-11-09T11-39-46.663902.jsonl": {
+            "bytes": 6305960,
+            "path": "artifacts/lm_eval_samples/lm-byte-small-2822813d-s0/samples_lambada_openai_2026-11-09T11-39-46.663902.jsonl",
+            "sha256": "e5964feabc0e3b4020a8ef0d1aeb1565719349c53cf9d896371b4ab4d747ac7d"
+          },
+          "samples_morrowglass_shakespeare_val_2026-11-09T11-39-46.663902.jsonl": {
+            "bytes": 1323751,
+            "path": "artifacts/lm_eval_samples/lm-byte-small-2822813d-s0/samples_morrowglass_shakespeare_val_2026-11-09T11-39-46.663902.jsonl",
+            "sha256": "0c3ce6b0ecb70092060853dc6404b72ec54a23debfe95d636de565d59a847187"
+          },
+          "samples_wikitext_2026-11-09T11-39-46.663902.jsonl": {
+            "bytes": 3831417,
+            "path": "artifacts/lm_eval_samples/lm-byte-small-2822813d-s0/samples_wikitext_2026-11-09T11-39-46.663902.jsonl",
+            "sha256": "5d82b99588344d8fea643d45e113c286ff2b25692774120a911ec1a5178624a9"
+          }
+        },
+        "server_command": "-m morrowglass.cli serve --port 5102 --model lm-byte-small-2822813d-s0",
+        "wall_time_s": 1934.4
+      },
+      "n_samples": {
+        "lambada_openai": 5153,
+        "morrowglass_shakespeare_val": 1,
+        "wikitext": 62
+      },
+      "own_val_bpb": 2.0858429544387227,
+      "shakespeare_val_bits_per_byte": 2.084671363884711,
+      "wikitext_bits_per_byte": 3.3957839139907664,
+      "wikitext_word_perplexity": 292643.9365235646
+    }
+  },
+  "protocol": {
+    "batch_size": 1,
+    "fewshot": 0,
+    "harness": "lm-eval==0.4.13 (eval/lm-eval-requirements.txt, fully pinned)",
+    "max_length": {
+      "hf:distilgpt2": 1024,
+      "scratch": 256
+    },
+    "model_type": "local-completions -> POST /v1/completions on 127.0.0.1 (echo + logprobs)",
+    "num_concurrent": 1,
+    "prefix_token": "newline (the scratch tokenizers have no BOS/EOS)",
+    "tasks": {
+      "lambada_openai": "all 5,153 docs",
+      "morrowglass_shakespeare_val": "our validation split as one document (eval/tasks/)",
+      "wikitext": "wikitext-2 document-level test, all 62 docs"
+    },
+    "tokenizer": "remote (/tokenize, /detokenize, /tokenizer_info served by the same API)"
+  },
+  "provenance": "measured",
+  "summarized": "2026-11-09T19:18:02+00:00",
+  "verdict": "supported"
+}

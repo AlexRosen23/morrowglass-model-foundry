@@ -1,0 +1,32 @@
+{
+  "command": ".venv-lmeval/bin/lm_eval run --model local-completions --model_args base_url=http://127.0.0.1:5102/v1/completions,model=lm-byte-small-240f8c28-s0,tokenizer_backend=remote,tokenized_requests=True,max_length=256,num_concurrent=1,max_retries=3,timeout=120,custom_prefix_token_id=10 --tasks lambada_openai,wikitext,morrowglass_shakespeare_val --include_path eval/tasks --batch_size 1 --num_fewshot 0 --seed 1234 --output_path reports/lm_eval/lm-byte-small-240f8c28-s0 --log_samples",
+  "finished": "2026-11-09T18:07:13+00:00",
+  "git": {
+    "branch": "feat/ai-engineer-readiness",
+    "commit": "39874747e31d4ec7d4233b618e5ba6544ca5deb9",
+    "dirty": false
+  },
+  "limit": null,
+  "max_length": 256,
+  "model": "lm-byte-small-240f8c28-s0",
+  "prefix_token_id": 10,
+  "samples_outside_git": {
+    "samples_lambada_openai_2026-11-09T12-07-09.454161.jsonl": {
+      "bytes": 6304955,
+      "path": "artifacts/lm_eval_samples/lm-byte-small-240f8c28-s0/samples_lambada_openai_2026-11-09T12-07-09.454161.jsonl",
+      "sha256": "1c981351131fdd52cf5e46d0d60c498802922576b01733810810b15167b57ef0"
+    },
+    "samples_morrowglass_shakespeare_val_2026-11-09T12-07-09.454161.jsonl": {
+      "bytes": 1323746,
+      "path": "artifacts/lm_eval_samples/lm-byte-small-240f8c28-s0/samples_morrowglass_shakespeare_val_2026-11-09T12-07-09.454161.jsonl",
+      "sha256": "9adca0c7bf10bd86ffbef537a94d9f4dd2c65f9f998b616eba673875bbe3cfe1"
+    },
+    "samples_wikitext_2026-11-09T12-07-09.454161.jsonl": {
+      "bytes": 3831367,
+      "path": "artifacts/lm_eval_samples/lm-byte-small-240f8c28-s0/samples_wikitext_2026-11-09T12-07-09.454161.jsonl",
+      "sha256": "e799b32c81161868ebd3bc5d1655d03fad2a7b7516b62f59a3639533c6b497eb"
+    }
+  },
+  "server_command": "-m morrowglass.cli serve --port 5102 --model lm-byte-small-240f8c28-s0",
+  "wall_time_s": 1600.0
+}

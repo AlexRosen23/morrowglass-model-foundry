@@ -9,6 +9,7 @@
     morrowglass analyze [EXP|all]          # verdicts, plots and result.json
     morrowglass final-test --runs A,B --reason "..."  # open the locked test split (logged)
     morrowglass bench RUN_ID               # inference latency / throughput / memory
+    morrowglass bench-kv RUN_ID            # KV cache on/off: equivalence + decode speed (registered study)
     morrowglass generate RUN_ID "prompt"   # sample from a checkpoint
     morrowglass export-artifact RUN_ID     # contracts/model_artifact_v1 manifest
     morrowglass lora [--approved]          # optional LoRA track (blocked without approval)
@@ -58,6 +59,9 @@ def main(argv: list[str] | None = None) -> int:
     ft.add_argument("--reason", required=True)
     bn = sub.add_parser("bench")
     bn.add_argument("run_id")
+    bk = sub.add_parser("bench-kv", help="KV cache equivalence + decode speed (EVALUATIONS['kv-cache'])")
+    bk.add_argument("run_id")
+    bk.add_argument("--devices", default=None, help="comma list, default cpu + mps when usable")
     g = sub.add_parser("generate")
     g.add_argument("run_id")
     g.add_argument("prompt")
@@ -136,6 +140,11 @@ def main(argv: list[str] | None = None) -> int:
         from morrowglass.inference.bench import bench_run
 
         _print(bench_run(args.run_id))
+    elif args.cmd == "bench-kv":
+        from morrowglass.inference.bench import bench_kv_cache
+
+        r = bench_kv_cache(args.run_id, devices=args.devices.split(",") if args.devices else None)
+        _print({k: r[k] for k in ("run_id", "speedup_tokens_per_s", "checks", "verdict")})
     elif args.cmd == "generate":
         from morrowglass.api.store import Store
 

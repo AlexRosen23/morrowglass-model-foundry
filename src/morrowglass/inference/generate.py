@@ -15,7 +15,7 @@ from typing import Any
 
 import torch
 
-from morrowglass.model.transformer import MorrowglassLM
+from morrowglass.model.transformer import KVCache, MorrowglassLM
 from morrowglass.tokenizer.tokenizers import Tokenizer
 
 MAX_NEW_TOKENS = 400
@@ -29,6 +29,48 @@ class GenToken:
     raw_prob: float  # probability under the untempered model distribution
     entropy_bits: float  # entropy of the untempered next-token distribution
     top: list[tuple[str, float]]  # top-5 alternatives under the untempered distribution
+
+
+class CachedDecoder:
+    """Next-token logits for a sequence that grows by one token per call.
+
+    With ``use_cache=True`` the first call runs the whole prompt once (prefill) and keeps every
+    layer's keys and values; each later call feeds only the newest token. The model uses learned
+    absolute positions, so once the sequence is longer than ``block_size`` the window slides and every
+    position changes: from then on each step recomputes the last ``block_size`` tokens without a cache,
+    exactly as the uncached path does. ``tests/test_kv_cache.py`` checks both paths give the same
+    logits at every step, across that boundary.
+    """
+
+    def __init__(self, model: MorrowglassLM, device: str = "cpu", use_cache: bool = True) -> None:
+        self.model = model
+        self.device = device
+        self.use_cache = use_cache
+        self._past: KVCache | None = None
+        self._ids: list[int] = []
+        self.stats = {"prefill": 0, "cached_step": 0, "full_recompute": 0}
+
+    def reset(self) -> None:
+        self._past, self._ids = None, []
+
+    @torch.no_grad()
+    def next_logits(self, ids: list[int]) -> torch.Tensor:
+        """Logits (V,) for the token after ``ids``, on the model's device."""
+        T = self.model.cfg.block_size
+        if not ids:
+            raise ValueError("need at least one token of context")
+        if not self.use_cache or len(ids) > T:
+            self.reset()
+            self.stats["full_recompute"] += 1
+            return self.model(torch.tensor([ids[-T:]], device=self.device)).logits[0, -1]
+        if self._past is not None and len(ids) == len(self._ids) + 1 and ids[:-1] == self._ids:
+            out = self.model(torch.tensor([ids[-1:]], device=self.device), past_kv=self._past, use_cache=True)
+            self.stats["cached_step"] += 1
+        else:
+            out = self.model(torch.tensor([ids], device=self.device), use_cache=True)
+            self.stats["prefill"] += 1
+        self._past, self._ids = out.past_kv, list(ids)
+        return out.logits[0, -1]
 
 
 def _filtered_probs(logits: torch.Tensor, temperature: float, top_k: int | None) -> torch.Tensor:
@@ -53,17 +95,17 @@ def stream(
     top_k: int | None = 40,
     seed: int = 0,
     device: str = "cpu",
+    use_cache: bool = True,
 ) -> Iterator[GenToken]:
-    """Yield tokens one at a time. Deterministic for a fixed seed on CPU."""
+    """Yield tokens one at a time. Deterministic for a fixed seed on CPU (with or without the KV cache)."""
     if max_new_tokens > MAX_NEW_TOKENS:
         raise ValueError(f"max_new_tokens capped at {MAX_NEW_TOKENS}")
     model.eval()
     gen = torch.Generator().manual_seed(seed)
     ids = tok.encode(prompt) or tok.encode("\n")
-    T = model.cfg.block_size
+    dec = CachedDecoder(model, device, use_cache)  # crops to the last block_size tokens when longer
     for _ in range(max_new_tokens):
-        ctx = torch.tensor([ids[-T:]], device=device)  # crop to the context window
-        logits = model(ctx).logits[0, -1].float().cpu()
+        logits = dec.next_logits(ids).float().cpu()
         raw = torch.softmax(logits, -1)
         p = _filtered_probs(logits, temperature, top_k)
         nxt = int(torch.multinomial(p, 1, generator=gen)) if temperature > 0 else int(p.argmax())

@@ -31,6 +31,8 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 PosEncoding = Literal["learned", "sinusoidal", "none"]
+# Per layer: (keys, values), each (B, H, T_past, D). Built by ``forward(..., use_cache=True)``.
+KVCache = list[tuple[Tensor, Tensor]]
 
 
 @dataclass(frozen=True)
@@ -70,6 +72,7 @@ class ModelOutput:
     logits: Tensor
     loss: Tensor | None = None
     attentions: list[Tensor] = field(default_factory=list)  # each (B, H, T, T)
+    past_kv: KVCache | None = None  # only when forward(..., use_cache=True)
 
 
 def sinusoidal_table(n_pos: int, d_model: int) -> Tensor:
@@ -97,27 +100,44 @@ class CausalSelfAttention(nn.Module):
         mask = torch.tril(torch.ones(cfg.block_size, cfg.block_size, dtype=torch.bool))
         self.register_buffer("mask", mask.view(1, 1, cfg.block_size, cfg.block_size), persistent=False)
 
-    def forward(self, x: Tensor, return_attn: bool = False) -> tuple[Tensor, Tensor | None]:
+    def forward(
+        self, x: Tensor, return_attn: bool = False, past: tuple[Tensor, Tensor] | None = None,
+        use_cache: bool = False,
+    ) -> tuple[Tensor, Tensor | None, tuple[Tensor, Tensor] | None]:
         B, T, C = x.shape
         q, k, v = self.qkv(x).split(C, dim=2)
         # (B, T, C) -> (B, H, T, D)
         q = q.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
         k = k.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
         v = v.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
+        if past is not None:
+            # KV cache: keys/values of earlier positions are reused, only the new queries are computed.
+            k = torch.cat([past[0], k], dim=2)
+            v = torch.cat([past[1], v], dim=2)
+        present = (k, v) if use_cache else None
+        t_past = k.size(2) - T
         if not return_attn and self.causal:
             # Same maths as below via the fused kernel (verified equal in tests).
-            y = F.scaled_dot_product_attention(
-                q, k, v, dropout_p=self.attn_drop.p if self.training else 0.0, is_causal=True
-            )
+            if t_past == 0:
+                y = F.scaled_dot_product_attention(
+                    q, k, v, dropout_p=self.attn_drop.p if self.training else 0.0, is_causal=True
+                )
+            else:
+                # Query i sits at absolute position t_past + i and may read keys 0..t_past + i.
+                # (is_causal=True would align the mask top-left, which is wrong when T_q < T_k.)
+                allowed = self.mask[:, :, t_past : t_past + T, : t_past + T]
+                y = F.scaled_dot_product_attention(
+                    q, k, v, attn_mask=allowed, dropout_p=self.attn_drop.p if self.training else 0.0
+                )
             att = None
         else:
-            scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.head_dim)  # (B, H, T, T)
+            scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.head_dim)  # (B, H, T, T_past + T)
             if self.causal:
-                scores = scores.masked_fill(~self.mask[:, :, :T, :T], float("-inf"))
+                scores = scores.masked_fill(~self.mask[:, :, t_past : t_past + T, : t_past + T], float("-inf"))
             att = F.softmax(scores, dim=-1)
             y = self.attn_drop(att) @ v
         y = y.transpose(1, 2).contiguous().view(B, T, C)  # merge heads
-        return self.resid_drop(self.proj(y)), att
+        return self.resid_drop(self.proj(y)), att, present
 
 
 class MLP(nn.Module):
@@ -139,11 +159,14 @@ class Block(nn.Module):
         self.ln2 = nn.LayerNorm(cfg.d_model, bias=cfg.bias)
         self.mlp = MLP(cfg)
 
-    def forward(self, x: Tensor, return_attn: bool = False) -> tuple[Tensor, Tensor | None]:
-        a, att = self.attn(self.ln1(x), return_attn)
+    def forward(
+        self, x: Tensor, return_attn: bool = False, past: tuple[Tensor, Tensor] | None = None,
+        use_cache: bool = False,
+    ) -> tuple[Tensor, Tensor | None, tuple[Tensor, Tensor] | None]:
+        a, att, present = self.attn(self.ln1(x), return_attn, past, use_cache)
         x = x + a
         x = x + self.mlp(self.ln2(x))
-        return x, att
+        return x, att, present
 
 
 class MorrowglassLM(nn.Module):
@@ -196,10 +219,18 @@ class MorrowglassLM(nn.Module):
         targets: Tensor | None = None,
         return_attn: bool = False,
         pos_offset: int | Tensor = 0,
+        past_kv: KVCache | None = None,
+        use_cache: bool = False,
     ) -> ModelOutput:
+        """Logits for ``idx``. With ``past_kv`` (from an earlier ``use_cache=True`` call), ``idx`` holds only
+        the new tokens; their positions continue after the cached ones and must stay within block_size."""
         B, T = idx.shape
         if self.cfg.block_size < T:
             raise ValueError(f"sequence length {T} > block_size {self.cfg.block_size}")
+        if past_kv is not None:
+            if isinstance(pos_offset, Tensor) or pos_offset != 0:
+                raise ValueError("pos_offset is implied by the cache length when past_kv is given")
+            pos_offset = past_kv[0][0].size(2)
         x = self.tok_emb(idx)
         if isinstance(pos_offset, Tensor):  # per-example offsets (position augmentation)
             if self.cfg.pos_encoding == "none":
@@ -213,15 +244,18 @@ class MorrowglassLM(nn.Module):
             x = x + self.positions(T, pos_offset)
         x = self.drop(x)
         attentions: list[Tensor] = []
-        for block in self.blocks:
-            x, att = block(x, return_attn)
+        presents: KVCache = []
+        for i, block in enumerate(self.blocks):
+            x, att, present = block(x, return_attn, past_kv[i] if past_kv is not None else None, use_cache)
             if att is not None:
                 attentions.append(att)
+            if present is not None:
+                presents.append(present)
         logits = self.lm_head(self.ln_f(x))
         loss = None
         if targets is not None:
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-100)
-        return ModelOutput(logits=logits, loss=loss, attentions=attentions)
+        return ModelOutput(logits=logits, loss=loss, attentions=attentions, past_kv=presents if use_cache else None)
 
 
 def count_parameters(model: nn.Module) -> int:

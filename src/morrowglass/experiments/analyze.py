@@ -20,7 +20,7 @@ from morrowglass.experiments.runner import (
     last_position_bpb,
     runs_dir_for,
 )
-from morrowglass.repro import git_provenance, now_iso, read_json, write_json
+from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, read_json, write_json
 
 
 def load_run(runs_dir: Path, run_id: str) -> dict[str, Any] | None:
@@ -313,9 +313,61 @@ def analyze(name: str, profile: str = "standard") -> dict[str, Any]:
     return result
 
 
+LORA_HYPOTHESIS = (
+    "Written 2026-11-08 while the approved run was in progress, before any result was seen: LoRA adapters "
+    "(r=8, alpha 16, on the attention c_attn projections; 300 steps x 8 x 256 GPT-2 tokens, lr 2e-4) lower "
+    "distilgpt2's bits-per-byte on the held-out Shakespeare validation plays relative to the frozen model.")
+LORA_CRITERION = "LoRA val bpb upper 95% CI < frozen val bpb lower 95% CI (full validation split)."
+
+
+def analyze_lora(model_name: str = "distilgpt2", seed: int = 0) -> dict[str, Any]:
+    src = REPORTS / "lora" / f"{model_name}-s{seed}.json"
+    out_dir = REPORTS / "experiments" / "lora"
+    result: dict[str, Any] = {
+        "experiment": "lora", "title": f"Pretrained adaptation: {model_name} + LoRA vs frozen", "track": "pretrained",
+        "hypothesis": LORA_HYPOTHESIS, "criterion": LORA_CRITERION,
+        "caveats": ["distilgpt2 was pretrained on OpenWebText, which may contain Shakespeare: weaker held-out guarantee.",
+                    "GPT-2 tokenizer and 256-token context (~4x the bytes of the byte models' context).",
+                    "One seed; validation only; the locked test split is untouched."],
+        "arms": [str(src.relative_to(REPO_ROOT))], "missing_runs": [], "analyzed": now_iso(),
+        "analysis_git": git_provenance()["commit"], "plots": [], "observations": {},
+    }
+    if not src.exists():
+        result.update({"verdict": "pending", "verdict_detail": "needs owner approval for the model download",
+                       "missing_runs": [str(src.relative_to(REPO_ROOT))]})
+    else:
+        r = read_json(src)
+        fz, lo = r["frozen_val"], r["lora_val"]
+        result["observations"] = {k: r[k] for k in ("frozen_val", "lora_val", "delta_bpb", "trainable_params",
+                                                     "total_params", "steps", "train_tokens", "train_seconds",
+                                                     "device", "memory_mb")}
+        sc = REPORTS / "runs" / "lm-bpe1024-small-eb29b8fb-s0" / "summary.json"
+        if sc.exists():
+            result["observations"]["scratch_best_val_bpb"] = read_json(sc)["final"]["val"]["bits_per_byte"]
+        result["plots"].append(_plot(out_dir / "lora_loss.png",
+                                     [{"x": list(range(0, r["steps"], max(1, r["steps"] // 50)))[: len(r["loss_curve"])],
+                                       "y": [v / 1.0 for v in r["loss_curve"]], "label": "LoRA train loss (nats/GPT-2 token)"}],
+                                     f"{model_name} + LoRA training loss", "step", "loss"))
+        sep = ci_separated(lo["bits_per_byte_ci95"], fz["bits_per_byte_ci95"])
+        result["verdict"] = "supported" if sep else ("contradicted" if ci_separated(fz["bits_per_byte_ci95"], lo["bits_per_byte_ci95"]) else "inconclusive")
+        result["verdict_detail"] = (f"frozen {fz['bits_per_byte']:.3f} {[round(x, 3) for x in fz['bits_per_byte_ci95']]} -> "
+                                    f"LoRA {lo['bits_per_byte']:.3f} {[round(x, 3) for x in lo['bits_per_byte_ci95']]} val bpb; "
+                                    f"{r['trainable_params']:,} of {r['total_params']:,} params trained")
+    note = out_dir / "note.md"
+    result["researcher_note"] = note.read_text() if note.exists() else None
+    write_json(out_dir / "result.json", result)
+    return result
+
+
 def analyze_all(which: str = "all", profile: str = "standard") -> dict[str, Any]:
+    if which == "lora":
+        r = analyze_lora()
+        return {"lora": {"verdict": r["verdict"], "detail": r.get("verdict_detail")}}
     names = ALL if which == "all" else [which]
     out = {}
+    if which == "all" and profile == "standard":
+        lr_ = analyze_lora()
+        out["lora"] = {"verdict": lr_["verdict"], "detail": lr_.get("verdict_detail")}
     for n in names:
         r = analyze(n, profile)
         out[n] = {"verdict": r["verdict"], "detail": r.get("verdict_detail")}

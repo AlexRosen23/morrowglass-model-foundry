@@ -1,0 +1,111 @@
+{
+  "batch": 8,
+  "block": 256,
+  "caveats": [
+    "distilgpt2 was pretrained on OpenWebText; Shakespeare quotations may appear in its pretraining data, so 'held-out' is weaker than for the scratch models.",
+    "Different tokenizer (GPT-2 BPE, 50,257) and context (256 GPT-2 tokens ~ 4x more bytes than the byte models' 256); bpb keeps the comparison in the same unit.",
+    "One seed; validation only; the locked test split is untouched."
+  ],
+  "dataset_hash": "a9b80ce5897befa12b26a8863a316dcfba034283fcc4fdec5eeeec58be675c8b",
+  "delta_bpb": -0.180794035176028,
+  "device": "mps",
+  "finished": "2026-11-09T05:30:37+00:00",
+  "frozen_val": {
+    "bits_per_byte": 1.9410755078949462,
+    "bits_per_byte_ci95": [
+      1.9272990833348536,
+      1.9553618086170896
+    ],
+    "bytes_predicted": 425672,
+    "windows": 509
+  },
+  "git": {
+    "branch": "feat/model-foundry",
+    "commit": "39112b3867dce5cf56c255b3f8fcc9fe1d203e2c",
+    "dirty": true
+  },
+  "hardware": "Apple M5 Pro",
+  "load_seconds": 39.7,
+  "lora": {
+    "alpha": 16,
+    "dropout": 0.05,
+    "r": 8,
+    "targets": [
+      "c_attn"
+    ]
+  },
+  "lora_val": {
+    "bits_per_byte": 1.7602814727189182,
+    "bits_per_byte_ci95": [
+      1.7475294217879491,
+      1.7734149597605082
+    ],
+    "bytes_predicted": 425672,
+    "windows": 509
+  },
+  "loss_curve": [
+    4.601622581481934,
+    4.66841459274292,
+    4.737841606140137,
+    4.580294132232666,
+    4.442086696624756,
+    4.529453754425049,
+    4.594465255737305,
+    4.490044593811035,
+    4.432895183563232,
+    4.438942909240723,
+    4.122631549835205,
+    4.348135948181152,
+    4.537879467010498,
+    4.490878582000732,
+    4.44161319732666,
+    4.362527847290039,
+    4.347035884857178,
+    4.206087112426758,
+    4.414360046386719,
+    4.310510635375977,
+    4.208790302276611,
+    4.135977745056152,
+    4.2519731521606445,
+    4.3478169441223145,
+    4.299577713012695,
+    4.405833721160889,
+    4.163486480712891,
+    4.431386470794678,
+    4.035801887512207,
+    4.1714653968811035,
+    4.413122177124023,
+    4.330722808837891,
+    4.2352375984191895,
+    4.31536340713501,
+    4.393095970153809,
+    4.314159393310547,
+    4.312632083892822,
+    4.230494022369385,
+    4.284505367279053,
+    4.096653938293457,
+    4.10023832321167,
+    4.34336519241333,
+    4.184313774108887,
+    4.048475742340088,
+    4.177102565765381,
+    4.202418804168701,
+    4.249915599822998,
+    4.455807685852051,
+    4.317458629608154,
+    4.324874401092529
+  ],
+  "lr": 0.0002,
+  "memory_mb": 320.4,
+  "model": "distilgpt2",
+  "seed": 0,
+  "split": "val (full; test untouched)",
+  "status": "completed",
+  "steps": 300,
+  "total_params": 82060032,
+  "train_seconds": 106.4,
+  "train_split_tokens": 1392253,
+  "train_tokens": 614400,
+  "trainable_params": 147456,
+  "wall_time_s": 142.7
+}

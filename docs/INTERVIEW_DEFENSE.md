@@ -74,7 +74,7 @@ generated from run records. Nothing here relies on a run that was not executed.
 1. Run the `extended` profile for the flagship. It is already defined and gated behind owner approval with a measured estimate.
 2. Equalise FLOPs in the capacity study, to fit a tiny scaling curve.
 3. Add RoPE vs learned positions on the digit-sum length split.
-4. Run the LoRA track (implemented, plumbing-tested, blocked on a download approval).
+4. Compare LoRA ranks and full fine-tuning against frozen distilgpt2 (LoRA already gives 1.941 → 1.760 val bpb), and check its pretraining data for Shakespeare.
 
 **14. How is the frontend prevented from showing fake numbers?**
 - The web app has no metric constants. It fetches `/api/*`, and those handlers read `reports/**.json`.
@@ -85,5 +85,5 @@ generated from run records. Nothing here relies on a run that was not executed.
 - Scale and seeds. Each main-track arm except the optimization study has one seed, so differences smaller than about 0.02 bpb should not be trusted.
 - Validation and test are three plays each: one author, one era.
 - MPS runs are not bit-reproducible.
-- The `extended` and LoRA runs have not been executed.
+- The `extended` run has not been executed. The LoRA run has one seed, and its pretrained base may have seen Shakespeare.
 - These are listed as open gaps in the README instead of being glossed over.

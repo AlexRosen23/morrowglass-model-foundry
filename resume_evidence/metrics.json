@@ -103,16 +103,19 @@
       "value": 87
     },
     {
-      "claim": "Pretrained LoRA adaptation compared with frozen baseline",
+      "claim": "distilgpt2 validation bits-per-byte, frozen vs LoRA-adapted (r=8, 300 steps)",
       "dataset_version": "a9b80ce5897befa1",
-      "reproduction_command": "requires owner approval for a model download",
-      "run_id_or_source": "not executed",
-      "status": "planned",
-      "unit": "\u2014",
-      "value": null
+      "reproduction_command": "uv run morrowglass lora --approved",
+      "run_id_or_source": "reports/lora/distilgpt2-s0.json",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": [
+        1.9411,
+        1.7603
+      ]
     }
   ],
-  "generated": "2026-11-09T05:23:18+00:00",
-  "git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "generated": "2026-11-09T05:31:54+00:00",
+  "git": "39112b3867dce5cf56c255b3f8fcc9fe1d203e2c",
   "policy": "Only status=verified claims may be used as resume achievements."
 }

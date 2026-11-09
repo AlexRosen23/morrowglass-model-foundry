@@ -22,7 +22,7 @@ choices (tokenization, capacity, optimisation) move that number by more than run
 | majority / frequency | unigram with add-one smoothing |
 | conventional ML | interpolated Kneser-Ney n-grams: byte orders 2-7, BPE-1024 orders 2-4 |
 | neural (this project) | decoder-only Transformer, 0.3M-4.8M parameters, written in PyTorch |
-| pretrained + LoRA | *planned; not executed* (needs owner approval for the model download, see "Open gaps" in the README) |
+| pretrained + LoRA | distilgpt2 frozen vs LoRA (r=8) on the same validation split, run after the owner approved the download (2026-11-08) |
 
 ## What success means
 

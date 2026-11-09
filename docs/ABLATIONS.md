@@ -14,6 +14,7 @@ numbers are in [RESULTS.md](RESULTS.md); the interpretation lives in `reports/ex
 | **Stabilisers at lr 0.1** | none vs warmup + clip vs lr 3e-3 | tiny model, 400 steps | best 4.078 → 3.763 → **3.422** | supported |
 | **Causal mask** | removed vs kept | tiny model, 400 and 2,000 steps | see `break-mask` and `break-mask-long` in RESULTS.md | 400 steps: no collapse yet |
 | **Output format** (algorithmic) | answer only vs running-sum scratchpad | model, steps, data | in-distribution accuracy 11% (chance) → **100%** | the format, not capacity, made the task learnable |
+| **LoRA adaptation** (pretrained) | frozen distilgpt2 vs + LoRA r=8 on c_attn, 300 steps | model, tokenizer, full validation split | 1.941 → **1.760** | supported (one seed; possible pretraining contamination) |
 | **Position augmentation** (algorithmic) | learned positions vs random position offsets | scratchpad format, 2 seeds | 12-16-term accuracy: 10.3% / 9.8% → 10.5% / **88.8%** | seed-dependent: transfers for 1 of 2 seeds |
 
 ## What is not apples-to-apples, and why

@@ -30,7 +30,7 @@ def _ci(ci: list[float] | None) -> str:
 
 def _load_results() -> dict[str, dict[str, Any]]:
     out = {}
-    for n in ALL:
+    for n in [*ALL, "lora"]:
         p = REPORTS / "experiments" / n / "result.json"
         if p.exists():
             out[n] = read_json(p)
@@ -195,8 +195,15 @@ def build_metrics_json(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
     if tests_file.exists():
         ts = read_json(tests_file)
         add("Automated tests passing (pytest, CPU)", ts["passed"], "tests", "reports/test_summary.json", "make test")
-    add("Pretrained LoRA adaptation compared with frozen baseline", None, "—", "not executed",
-        "requires owner approval for a model download", status="planned")
+    lo = results.get("lora")
+    if lo and lo["verdict"] != "pending":
+        o = lo["observations"]
+        add("distilgpt2 validation bits-per-byte, frozen vs LoRA-adapted (r=8, 300 steps)",
+            [round(o["frozen_val"]["bits_per_byte"], 4), round(o["lora_val"]["bits_per_byte"], 4)], "bits/byte",
+            "reports/lora/distilgpt2-s0.json", "uv run morrowglass lora --approved")
+    else:
+        add("Pretrained LoRA adaptation compared with frozen baseline", None, "—", "not executed",
+            "requires owner approval for a model download", status="planned")
     out = {"generated": now_iso(), "git": git_provenance()["commit"],
            "policy": "Only status=verified claims may be used as resume achievements.", "claims": claims}
     write_json(REPO_ROOT / "resume_evidence" / "metrics.json", out)

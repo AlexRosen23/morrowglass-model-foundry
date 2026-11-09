@@ -191,3 +191,23 @@ Limitations: the improvement in best val loss is modest (0.045 nats). Most of th
 Next test: a dropout sweep {0.1, 0.2, 0.3} x 2 seeds, plus weight decay 0.3.
 Decision: always report the best-on-validation checkpoint (the trainer already does), and enable early stopping for scarce-data runs.
 
+## Pretrained adaptation: distilgpt2 + LoRA vs frozen
+
+**Verdict: supported.** frozen 1.941 [1.927, 1.955] -> LoRA 1.760 [1.748, 1.773] val bpb; 147,456 of 82,060,032 params trained
+
+- **Hypothesis.** Written 2026-11-08 while the approved run was in progress, before any result was seen: LoRA adapters (r=8, alpha 16, on the attention c_attn projections; 300 steps x 8 x 256 GPT-2 tokens, lr 2e-4) lower distilgpt2's bits-per-byte on the held-out Shakespeare validation plays relative to the frozen model.
+- **Criterion (pre-registered).** LoRA val bpb upper 95% CI < frozen val bpb lower 95% CI (full validation split).
+- **Runs.** `reports/lora/distilgpt2-s0.json`
+- **Caveats.** distilgpt2 was pretrained on OpenWebText, which may contain Shakespeare: weaker held-out guarantee. GPT-2 tokenizer and 256-token context (~4x the bytes of the byte models' context). One seed; validation only; the locked test split is untouched.
+
+![lora lora_loss.png](../reports/experiments/lora/lora_loss.png)
+
+Hypothesis (written while the approved run was in progress, before results): LoRA adapters lower distilgpt2's validation bits-per-byte relative to the frozen model, with non-overlapping 95% intervals.
+Setup: distilgpt2 (82.06M params, downloaded from the Hugging Face Hub with the owner's approval on 2026-11-08). LoRA r=8, alpha 16, dropout 0.05 on the attention c_attn projections: 147,456 trainable params (0.18%). 300 steps x 8 x 256 GPT-2 tokens = 614K tokens (0.44 of an epoch over the 1.39M-token train split), lr 2e-4, seed 0, MPS. Evaluation: the full validation split (425,672 bytes, 509 windows of 256 GPT-2 tokens, context reset per window), using exact GPT-2 byte lengths (asserted to reconstruct the text).
+Observed: frozen 1.941 bpb [1.927, 1.955], LoRA 1.760 [1.748, 1.773], a drop of 0.181 bpb with clearly separated intervals. Supported. Training took 106 s, plus 40 s to load the model.
+Context: even frozen, distilgpt2 beats every model trained from scratch here (best 2.007 for BPE-1024-small on validation). That reflects ~41x more parameters and pretraining on far more text, not a better recipe for 4.5 MB of data.
+Limitations: distilgpt2's pretraining corpus (OpenWebText) may contain Shakespeare, so "held-out" is weaker than for the scratch models; the GPT-2 context covers ~4x more bytes; one seed; validation only (the locked test split was not opened for this run).
+Provenance note: the run recorded git dirty=true because analysis/report modules were being edited while it ran; src/morrowglass/finetune/lora.py was identical to commit 39112b3 (checked with git diff).
+Next test: full fine-tuning vs LoRA at matched steps, and r in {2, 8, 32}, on the same split.
+Decision: the pretrained + LoRA track is the strongest model in this repo; the scratch track remains the instrument for studying the internals.
+

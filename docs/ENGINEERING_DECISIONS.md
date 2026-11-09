@@ -17,5 +17,5 @@
 | Frontend charts | hand-written SVG | chart libraries | Small bundle, exact control over axes and labels, nothing that can invent data. |
 | Frontend framework | Vite + React + TS | Next.js | No server-side rendering or routing is needed; the API is separate. |
 | Long jobs in the API | only a bounded smoke job, in a subprocess, cancellable | train from request handlers | Never block the API, and never start long GPU runs from a browser on a shared machine. |
-| LoRA / pretrained | not executed, recorded as planned | download GPT-2 automatically | The rules require owner approval for substantial downloads. A tiny random model would be a fake comparison. |
+| LoRA / pretrained | distilgpt2 + LoRA on `c_attn` (r=8), run only after the owner approved the download | download GPT-2 automatically; full fine-tuning | Downloads need explicit approval; LoRA trains 0.18% of parameters in under 2 minutes on MPS. The plumbing test uses a locally built random GPT-2, so CI never downloads. |
 | Resource use | `torch.set_num_threads(4)`, standard runs under about 12 min each | longer runs | The machine is shared with other builders and has a known memory fault. |

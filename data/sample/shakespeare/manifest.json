@@ -1,0 +1,27 @@
+{
+  "dataset": "shakespeare-sample",
+  "derived_from": "data/processed/shakespeare",
+  "derived_from_sha256": {
+    "test": "edbfc1d737c3b07022f354e31fc4e8dda32bea9c07cac8161e77c6ae4fb6528e",
+    "train": "5ea3fccde1c1c265e2cca3668f6ffd149aa143af5f96a1d0463342b3c21e80db",
+    "val": "976409b2dfa007b8aaac4754340243097b20f172471aebeeb644db169937200f"
+  },
+  "files": {
+    "test": {
+      "bytes": 39984,
+      "path": "test.txt",
+      "sha256": "15410b73015835a2c7e94327588502947a951260ecdbaf9c1d4b980dc303aeea"
+    },
+    "train": {
+      "bytes": 239983,
+      "path": "train.txt",
+      "sha256": "fe289fac5909070c0d5c49777775bb5933f9338783f9a5c230521059b37c7d96"
+    },
+    "val": {
+      "bytes": 39994,
+      "path": "val.txt",
+      "sha256": "11084b8b7483f920fd7944a9d2e2933d233c4b1a8b873f48294b96d02ee0476a"
+    }
+  },
+  "policy": "first N characters of each processed split, cut at a line boundary"
+}

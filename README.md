@@ -5,8 +5,8 @@ PyTorch, trained from scratch on public-domain Shakespeare, measured against str
 baselines, and studied with pre-registered ablations. Every number in the workbench and the docs
 is read from a saved run record.
 
-> CI is defined in `.github/workflows/ci.yml` but **GitHub Actions is not enabled** on this private
-> repository (owner approval required). The same checks run locally with `make ci`.
+> CI: `.github/workflows/ci.yml` runs on GitHub Actions for pull requests and pushes to `main`
+> (enabled with the owner's approval on 2026-11-08). `make ci` runs the same checks locally.
 
 ## Results at a glance
 

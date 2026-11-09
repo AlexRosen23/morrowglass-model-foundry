@@ -30,8 +30,9 @@ Requirements:
 | `make web-check` | TypeScript + production build |
 | `make ci` | all of the above, which is what `.github/workflows/ci.yml` runs |
 
-**CI status.** The workflow is defined but GitHub Actions is **disabled** on this private repository.
-Enabling it needs the owner's approval. Run `make ci` locally before opening a PR.
+**CI status.** GitHub Actions runs `.github/workflows/ci.yml` on every pull request and on pushes to
+`main`. It was enabled with the owner's approval on 2026-11-08. Minutes count against the account's
+shared 2,000/month private-repo budget, so still run `make ci` locally before pushing.
 
 ## Running experiments
 

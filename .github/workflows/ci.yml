@@ -1,5 +1,5 @@
-# Defined but NOT enabled: GitHub Actions is disabled on this private repo (owner approval required).
-# The same checks run locally with `make ci`.
+# GitHub Actions enabled on this private repo with the owner's approval (2026-11-08).
+# Runs on pull requests and pushes to main only; read-only token; no deploys. `make ci` runs the same checks locally.
 name: ci
 on:
   pull_request:

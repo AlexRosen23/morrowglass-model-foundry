@@ -1,0 +1,109 @@
+{
+  "created": "2026-11-09T04:01:28+00:00",
+  "dataset": "shakespeare",
+  "files": {
+    "test": {
+      "bytes": 377278,
+      "chars": 377252,
+      "non_ascii_chars": 26,
+      "path": "test.txt",
+      "sha256": "edbfc1d737c3b07022f354e31fc4e8dda32bea9c07cac8161e77c6ae4fb6528e",
+      "works": [
+        "THE TRAGEDY OF MACBETH",
+        "PERICLES, PRINCE OF TYRE",
+        "CYMBELINE"
+      ]
+    },
+    "train": {
+      "bytes": 4557058,
+      "chars": 4556828,
+      "non_ascii_chars": 230,
+      "path": "train.txt",
+      "sha256": "5ea3fccde1c1c265e2cca3668f6ffd149aa143af5f96a1d0463342b3c21e80db",
+      "works": [
+        "THE SONNETS",
+        "ALL'S WELL THAT ENDS WELL",
+        "THE TRAGEDY OF ANTONY AND CLEOPATRA",
+        "THE COMEDY OF ERRORS",
+        "THE TRAGEDY OF CORIOLANUS",
+        "THE FIRST PART OF KING HENRY THE FOURTH",
+        "THE SECOND PART OF KING HENRY THE FOURTH",
+        "THE LIFE OF KING HENRY THE FIFTH",
+        "THE FIRST PART OF HENRY THE SIXTH",
+        "THE SECOND PART OF KING HENRY THE SIXTH",
+        "THE THIRD PART OF KING HENRY THE SIXTH",
+        "KING HENRY THE EIGHTH",
+        "THE LIFE AND DEATH OF KING JOHN",
+        "THE TRAGEDY OF JULIUS CAESAR",
+        "THE TRAGEDY OF KING LEAR",
+        "LOVE'S LABOUR'S LOST",
+        "MEASURE FOR MEASURE",
+        "THE MERCHANT OF VENICE",
+        "THE MERRY WIVES OF WINDSOR",
+        "A MIDSUMMER NIGHT'S DREAM",
+        "MUCH ADO ABOUT NOTHING",
+        "THE TRAGEDY OF OTHELLO, THE MOOR OF VENICE",
+        "KING RICHARD THE SECOND",
+        "KING RICHARD THE THIRD",
+        "THE TRAGEDY OF ROMEO AND JULIET",
+        "THE TAMING OF THE SHREW",
+        "THE TEMPEST",
+        "THE LIFE OF TIMON OF ATHENS",
+        "TROILUS AND CRESSIDA",
+        "TWELFTH NIGHT; OR, WHAT YOU WILL",
+        "THE TWO GENTLEMEN OF VERONA",
+        "THE TWO NOBLE KINSMEN",
+        "THE WINTER'S TALE",
+        "A LOVER'S COMPLAINT",
+        "THE PASSIONATE PILGRIM",
+        "THE PHOENIX AND THE TURTLE",
+        "THE RAPE OF LUCRECE",
+        "VENUS AND ADONIS"
+      ]
+    },
+    "val": {
+      "bytes": 425674,
+      "chars": 425667,
+      "non_ascii_chars": 7,
+      "path": "val.txt",
+      "sha256": "976409b2dfa007b8aaac4754340243097b20f172471aebeeb644db169937200f",
+      "works": [
+        "AS YOU LIKE IT",
+        "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK",
+        "THE TRAGEDY OF TITUS ANDRONICUS"
+      ]
+    }
+  },
+  "n_works": 44,
+  "overlap": {
+    "test_vs_train": {
+      "fraction": 0.00015,
+      "lines_checked": 6651,
+      "lines_seen_in_train": 1,
+      "min_line_chars": 30
+    },
+    "val_vs_train": {
+      "fraction": 0.00039,
+      "lines_checked": 7696,
+      "lines_seen_in_train": 3,
+      "min_line_chars": 30
+    }
+  },
+  "processing": [
+    "CRLF->LF",
+    "NFC",
+    "typographic quotes/dashes->ASCII",
+    "strip trailing spaces",
+    "strip PG header/footer",
+    "split by work using table of contents"
+  ],
+  "source": {
+    "license": "Public domain in the USA; Project Gutenberg boilerplate removed",
+    "name": "Project Gutenberg eBook #100: The Complete Works of William Shakespeare",
+    "raw_bytes": 5638481,
+    "raw_sha256": "eb61e33cab23dbe712ad57091ded6c7292ba91ac3bb2764f51a3223ec0068fe5",
+    "url": "https://www.gutenberg.org/cache/epub/100/pg100.txt"
+  },
+  "split_policy": "3 val + 3 test plays sampled by seed; poems always train",
+  "split_seed": 1729
+}

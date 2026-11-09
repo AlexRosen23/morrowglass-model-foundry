@@ -1,0 +1,139 @@
+{
+  "claims": [
+    {
+      "claim": "Scratch byte-level Transformer validation bits-per-byte on 3 held-out Shakespeare plays",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "make reproduce-scratch",
+      "run_id_or_source": "lm-byte-small-2822813d-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.0858
+    },
+    {
+      "claim": "Best count-based baseline (interpolated Kneser-Ney, order chosen on validation) validation bits-per-byte",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass baselines",
+      "run_id_or_source": "reports/baselines-shakespeare.json",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.107
+    },
+    {
+      "claim": "Transformer parameter count",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "make reproduce-scratch",
+      "run_id_or_source": "lm-byte-small-2822813d-s0",
+      "status": "verified",
+      "unit": "parameters",
+      "value": 1869504
+    },
+    {
+      "claim": "Scratch byte-level Transformer, extended budget (10k steps), validation bits-per-byte (95% CI [1.981, 2.006]) vs best n-gram 2.1070",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run scratch --profile extended --approved",
+      "run_id_or_source": "lm-byte-small-240f8c28-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 1.9933
+    },
+    {
+      "claim": "BPE-1024 vs byte tokenization val bits-per-byte at equal steps (bpe, byte)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run tokenization",
+      "run_id_or_source": "lm-byte-small-2822813d-s0,lm-bpe1024-small-eb29b8fb-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": [
+        2.0071,
+        2.0858
+      ]
+    },
+    {
+      "claim": "Optimization ablation: configs x seeds executed",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run optimization",
+      "run_id_or_source": "reports/experiments/optimization/result.json",
+      "status": "verified",
+      "unit": "runs",
+      "value": 9
+    },
+    {
+      "claim": "Locked-test bits-per-byte of lm-bpe1024-small-eb29b8fb-s0 (95% CI [2.064, 2.095])",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass final-test (logged access)",
+      "run_id_or_source": "lm-bpe1024-small-eb29b8fb-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.0809
+    },
+    {
+      "claim": "Locked-test bits-per-byte of lm-byte-medium-b01e2a16-s0 (95% CI [2.128, 2.154])",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass final-test (logged access)",
+      "run_id_or_source": "lm-byte-medium-b01e2a16-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.1409
+    },
+    {
+      "claim": "Locked-test bits-per-byte of lm-byte-small-240f8c28-s0 (95% CI [2.075, 2.103])",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass final-test (logged access)",
+      "run_id_or_source": "lm-byte-small-240f8c28-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.089
+    },
+    {
+      "claim": "Locked-test bits-per-byte of lm-byte-small-2822813d-s0 (95% CI [2.158, 2.183])",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass final-test (logged access)",
+      "run_id_or_source": "lm-byte-small-2822813d-s0",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.1709
+    },
+    {
+      "claim": "Locked-test bits-per-byte of the best n-gram baseline kneser-ney-4 (bpe1024) (95% CI [2.176, 2.206])",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass final-test (logged access)",
+      "run_id_or_source": "reports/baselines-shakespeare-test.json",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": 2.1914
+    },
+    {
+      "claim": "Digit-sum scratchpad: in-distribution final-answer accuracy, all 4 runs (min)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run digitsum-scratchpad",
+      "run_id_or_source": "digitsum-sp-plain-b231a0b3-s0,digitsum-sp-posaug-8fe76e50-s0,digitsum-sp-plain-43d26213-s1,digitsum-sp-posaug-65abe9b8-s1",
+      "status": "verified",
+      "unit": "accuracy",
+      "value": 1.0
+    },
+    {
+      "claim": "Automated tests passing (pytest, CPU)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "make test",
+      "run_id_or_source": "reports/test_summary.json",
+      "status": "verified",
+      "unit": "tests",
+      "value": 87
+    },
+    {
+      "claim": "distilgpt2 validation bits-per-byte, frozen vs LoRA-adapted (r=8, 300 steps)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass lora --approved",
+      "run_id_or_source": "reports/lora/distilgpt2-s0.json",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": [
+        1.9411,
+        1.7603
+      ]
+    }
+  ],
+  "generated": "2026-11-09T05:53:27+00:00",
+  "git": "490b8a800bae18584faa1ddf8a1e2c4c34936679",
+  "policy": "Only status=verified claims may be used as resume achievements."
+}

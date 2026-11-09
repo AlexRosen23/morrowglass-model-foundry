@@ -1,0 +1,170 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:58+00:00",
+  "arms": [
+    "lm-byte-tiny-840ad41c-s0",
+    "lm-byte-small-2822813d-s0",
+    "lm-byte-medium-b01e2a16-s0",
+    "scarce-byte-tiny-dcfe85f7-s0",
+    "scarce-byte-medium-d0cf6f70-s0"
+  ],
+  "caveats": [
+    "Equal tokens, not equal FLOPs: the medium model spends ~4x the compute per token.",
+    "One seed per arm."
+  ],
+  "criterion": "Full data: bpb(medium) < bpb(small) < bpb(tiny). Scarce data: medium's final val loss exceeds its best val loss by > 0.05 nats while its train loss keeps decreasing.",
+  "experiment": "capacity",
+  "hypothesis": "On the full 4.5 MB corpus, larger models reach lower val bpb at an equal token budget; on the 240 KB sample the medium model overfits (val loss rises after its minimum while train loss keeps falling).",
+  "missing_runs": [],
+  "observations": {
+    "full_val_bpb": {
+      "medium": 2.0366883188539697,
+      "small": 2.0858429544387227,
+      "tiny": 2.3351048192704944
+    },
+    "scarce_medium": {
+      "best_step": 550,
+      "best_val_loss": 1.8855585323943007,
+      "final_train_loss": 0.42493148425013316,
+      "final_val_loss": 3.1428756284905246,
+      "rise_after_best": 1.2573170960962239,
+      "train_loss_at_best": 1.4340288167164852
+    },
+    "scarce_tiny": {
+      "best_val_loss": 1.917969458022897,
+      "final_val_loss": 1.917969458022897
+    }
+  },
+  "plots": [
+    "full_data.png",
+    "scarce_data.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis: on 4.5 MB, bigger models win at equal tokens; on 240 KB, the 4.85M-parameter model overfits.\nSetup: tiny (0.27M) / small (1.87M) / medium (4.85M) byte models for 2,500 steps (20.5M tokens) on the full corpus; tiny and medium for 1,500 steps on the 240 KB sample (12.3M tokens, ~51 epochs).\nObserved: full-data val bpb is 2.335 / 2.086 / 2.037, ordered as predicted, with non-overlapping intervals. On scarce data the medium model's best val loss was 1.886 nats at step 550, after which val loss climbed to 3.143 while train loss fell to 0.425: classic memorisation. Its best-checkpoint val bpb (2.756) is only slightly better than the tiny model's (2.771), which never overfit (final = best val loss, 1.918).\nLimitations: equal tokens, not equal compute (medium spends ~2.5x the FLOPs per token of small: 33.4M vs 13.3M by the 6N + attention estimate); one seed each; the scarce validation set is the 40 KB sample of the same held-out plays.\nNext test: equal-FLOPs sweep with 3 sizes x 2 seeds to fit a tiny scaling curve.\nDecision: on scarce data, select the best validation checkpoint and use regularisation (see break-overfit); medium is the best byte model on full data.\n",
+  "table": [
+    {
+      "best_step": 2500,
+      "device": "mps",
+      "ece": 0.00996642839822751,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.5164107084274292,
+      "params": 270816,
+      "run_id": "lm-byte-tiny-840ad41c-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 2.188733868191442,
+      "val_bpb": 2.3351048192704944,
+      "val_bpb_ci95": [
+        2.324468291472409,
+        2.3451552748228086
+      ],
+      "val_loss": 1.6185713217892836,
+      "val_ppl_token": 5.0458762310622625,
+      "wall_time_s": 94.9
+    },
+    {
+      "best_step": 2500,
+      "device": "mps",
+      "ece": 0.028702500833558436,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.2574360370635986,
+      "params": 1869504,
+      "run_id": "lm-byte-small-2822813d-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.831149324936616,
+      "val_bpb": 2.0858429544387227,
+      "val_bpb_ci95": [
+        2.0743703245762806,
+        2.0977968779094742
+      ],
+      "val_loss": 1.445796162960027,
+      "val_ppl_token": 4.245230693138306,
+      "wall_time_s": 291.1
+    },
+    {
+      "best_step": 2400,
+      "device": "mps",
+      "ece": 0.02681955934637919,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.1949526071548462,
+      "params": 4852992,
+      "run_id": "lm-byte-medium-b01e2a16-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.745432433286321,
+      "val_bpb": 2.0366883188539697,
+      "val_bpb_ci95": [
+        2.025035740164238,
+        2.0478577163596445
+      ],
+      "val_loss": 1.4117247658930039,
+      "val_ppl_token": 4.103026064115199,
+      "wall_time_s": 674.6
+    },
+    {
+      "best_step": 1500,
+      "device": "mps",
+      "ece": 0.06061713356033162,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.3836898803710938,
+      "params": 270816,
+      "run_id": "scarce-byte-tiny-dcfe85f7-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 1500,
+      "tokenizer": "byte",
+      "tokens_seen": 12288000,
+      "train_subset_bpb": 2.034941072329224,
+      "val_bpb": 2.7712884296212095,
+      "val_bpb_ci95": [
+        2.7163704402264583,
+        2.831508823715996
+      ],
+      "val_loss": 1.9209107615103396,
+      "val_ppl_token": 6.827173565533814,
+      "wall_time_s": 104.5
+    },
+    {
+      "best_step": 550,
+      "device": "mps",
+      "ece": 0.07167032380759443,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 0.39305901527404785,
+      "params": 4852992,
+      "run_id": "scarce-byte-medium-d0cf6f70-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 1500,
+      "tokenizer": "byte",
+      "tokens_seen": 12288000,
+      "train_subset_bpb": 2.065754303262274,
+      "val_bpb": 2.755750674509805,
+      "val_bpb_ci95": [
+        2.7030838841676808,
+        2.814815278248151
+      ],
+      "val_loss": 1.9101408103626387,
+      "val_ppl_token": 6.754039770365712,
+      "wall_time_s": 322.9
+    }
+  ],
+  "title": "Model capacity at equal token budget (full data vs 240 KB scarce data)",
+  "track": "language-model",
+  "verdict": "supported",
+  "verdict_detail": "full-data bpb tiny 2.335 / small 2.086 / medium 2.037; scarce medium val loss rose +1.257 nats after step 550"
+}

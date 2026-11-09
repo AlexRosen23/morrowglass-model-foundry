@@ -1,0 +1,180 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:55+00:00",
+  "arms": [
+    "lm-byte-small-2822813d-s0"
+  ],
+  "caveats": [
+    "Single seed for the flagship run (seed variation is measured in the optimization experiment).",
+    "Validation plays are other Shakespeare plays: same author and era, so this is in-domain."
+  ],
+  "criterion": "Transformer val bpb upper 95% CI < best n-gram val bpb lower 95% CI.",
+  "experiment": "scratch",
+  "hypothesis": "A 1.9M-parameter byte-level Transformer trained from scratch reaches lower held-out bits-per-byte than the best interpolated Kneser-Ney n-gram (order chosen on validation).",
+  "missing_runs": [],
+  "observations": {
+    "baseline_best": {
+      "model": "kneser-ney-4",
+      "order": 4,
+      "tokenizer": "bpe1024"
+    },
+    "baseline_val_bpb": 2.106995415066531,
+    "baseline_val_bpb_ci95": [
+      2.0946004846144484,
+      2.1199446199644223
+    ],
+    "calibration": {
+      "bins": [
+        {
+          "acc": 0.09302325581395349,
+          "conf": 0.06109865754842758,
+          "hi": 0.06666666666666667,
+          "lo": 0.0,
+          "n": 43
+        },
+        {
+          "acc": 0.10795228628230616,
+          "conf": 0.11200682818889618,
+          "hi": 0.13333333333333333,
+          "lo": 0.06666666666666667,
+          "n": 20120
+        },
+        {
+          "acc": 0.157193094629156,
+          "conf": 0.16484180092811584,
+          "hi": 0.2,
+          "lo": 0.13333333333333333,
+          "n": 31280
+        },
+        {
+          "acc": 0.22283377889605283,
+          "conf": 0.23276203870773315,
+          "hi": 0.26666666666666666,
+          "lo": 0.2,
+          "n": 25436
+        },
+        {
+          "acc": 0.28755777408023664,
+          "conf": 0.300857812166214,
+          "hi": 0.3333333333333333,
+          "lo": 0.26666666666666666,
+          "n": 27045
+        },
+        {
+          "acc": 0.3379322268326418,
+          "conf": 0.3663535714149475,
+          "hi": 0.4,
+          "lo": 0.3333333333333333,
+          "n": 28920
+        },
+        {
+          "acc": 0.4044692737430168,
+          "conf": 0.43299299478530884,
+          "hi": 0.4666666666666667,
+          "lo": 0.4,
+          "n": 27745
+        },
+        {
+          "acc": 0.4596302279662538,
+          "conf": 0.4998893141746521,
+          "hi": 0.5333333333333333,
+          "lo": 0.4666666666666667,
+          "n": 27855
+        },
+        {
+          "acc": 0.5334017687934302,
+          "conf": 0.5662243962287903,
+          "hi": 0.6,
+          "lo": 0.5333333333333333,
+          "n": 25328
+        },
+        {
+          "acc": 0.6040472319671429,
+          "conf": 0.6331226229667664,
+          "hi": 0.6666666666666666,
+          "lo": 0.6,
+          "n": 23374
+        },
+        {
+          "acc": 0.6649470781819798,
+          "conf": 0.6998483538627625,
+          "hi": 0.7333333333333333,
+          "lo": 0.6666666666666666,
+          "n": 22486
+        },
+        {
+          "acc": 0.730610615937209,
+          "conf": 0.7667282223701477,
+          "hi": 0.8,
+          "lo": 0.7333333333333333,
+          "n": 22551
+        },
+        {
+          "acc": 0.7979228366262323,
+          "conf": 0.8339887261390686,
+          "hi": 0.8666666666666667,
+          "lo": 0.8,
+          "n": 24649
+        },
+        {
+          "acc": 0.8612581029236671,
+          "conf": 0.9018057584762573,
+          "hi": 0.9333333333333333,
+          "lo": 0.8666666666666667,
+          "n": 30236
+        },
+        {
+          "acc": 0.9420913041024773,
+          "conf": 0.9796003103256226,
+          "hi": 1.0,
+          "lo": 0.9333333333333333,
+          "n": 88605
+        }
+      ],
+      "ece": 0.028702500833558436,
+      "mean_confidence": 0.5985606908798218,
+      "n_tokens": 425673,
+      "top1_accuracy": 0.5698646613715223
+    },
+    "transformer_val_bpb": 2.0858429544387227,
+    "transformer_val_bpb_ci95": [
+      2.0743703245762806,
+      2.0977968779094742
+    ]
+  },
+  "plots": [
+    "curve.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis: a 1.87M-parameter byte-level Transformer beats the strongest count-based model on held-out plays, with non-overlapping 95% intervals.\nSetup: lm-byte-small-2822813d-s0, 4 layers x 4 heads x 192, context 256, 2,500 steps x 8,192 tokens (20.5M tokens, ~4.5 epochs), AdamW lr 3e-3, warmup 100 + cosine, MPS, 291 s. Baselines: uniform, unigram, Kneser-Ney byte orders 2-7 and BPE-1024 orders 2-4, all fitted on train; best on validation was KN-4 on BPE-1024 tokens.\nObserved: validation 2.086 bpb [2.074, 2.098] vs KN-4 2.107 [2.095, 2.120]. The point estimate is better by 0.021 bpb, but the intervals overlap by 0.003, so the pre-registered criterion is not met. Calibration is good for a small model: ECE 0.029, top-1 next-byte accuracy 57.0%. Train-subset bpb is 1.83 vs 2.09 on validation, so part of what it learned is specific to the training plays.\nTest (opened once, logged): flagship 2.171 [2.158, 2.183] vs KN-4 2.191 [2.176, 2.206]; again a lower point estimate with slightly overlapping intervals. Test plays are harder than validation plays for every model.\nLimitations: one seed; the model is undertrained (val loss was still falling at step 2,500); the KN baseline is a strong, well-tuned competitor at this data size.\nNext test: the extended profile (10k steps, ~20 min, needs owner approval), which the capacity results suggest would separate the curves.\nDecision: report as not supported. The same architecture at 4.85M parameters (lm-byte-medium) and with BPE tokens (lm-bpe1024-small) does beat the baseline with non-overlapping intervals on validation and test, which is evidence that capacity and context in bytes, not the architecture, limit the flagship.\n",
+  "table": [
+    {
+      "best_step": 2500,
+      "device": "mps",
+      "ece": 0.028702500833558436,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.2574360370635986,
+      "params": 1869504,
+      "run_id": "lm-byte-small-2822813d-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.831149324936616,
+      "val_bpb": 2.0858429544387227,
+      "val_bpb_ci95": [
+        2.0743703245762806,
+        2.0977968779094742
+      ],
+      "val_loss": 1.445796162960027,
+      "val_ppl_token": 4.245230693138306,
+      "wall_time_s": 291.1
+    }
+  ],
+  "title": "Scratch Transformer vs count-based baselines",
+  "track": "language-model",
+  "verdict": "not supported",
+  "verdict_detail": "Transformer 2.086 bpb vs best n-gram (kneser-ney-4, bpe1024) 2.107"
+}

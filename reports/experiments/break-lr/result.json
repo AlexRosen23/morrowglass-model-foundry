@@ -1,0 +1,122 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:59+00:00",
+  "arms": [
+    "break-lr-broken-31ee17a1-s0",
+    "break-lr-fix1-warmup-clip-d5ba728d-s0",
+    "break-lr-fix2-lr3e-3-8991a8b4-s0"
+  ],
+  "caveats": [
+    "Short runs (400 steps) by design."
+  ],
+  "criterion": "Broken arm: diverged or best val bpb > 3.0. Fix-1: reported as measured. Fix-2: best val bpb < broken arm's by > 0.5.",
+  "experiment": "break-lr",
+  "hypothesis": "lr=0.1 with no warmup and no clipping diverges or stalls far above the baseline; adding warmup and clipping alone does not rescue it; returning to lr=3e-3 does.",
+  "missing_runs": [],
+  "observations": {
+    "broken": {
+      "best_val_bpb": 4.077729179580586,
+      "failure": null,
+      "max_grad_norm": 1.7505989074707031,
+      "skipped_steps": 0,
+      "status": "completed"
+    },
+    "fix1_warmup_clip": {
+      "best_val_bpb": 3.762999256639434,
+      "failure": null,
+      "max_grad_norm": 1.7505989074707031,
+      "skipped_steps": 0,
+      "status": "completed"
+    },
+    "fix2_lr3e-3": {
+      "best_val_bpb": 3.4224159975241455,
+      "failure": null,
+      "max_grad_norm": 1.9253222942352295,
+      "skipped_steps": 0,
+      "status": "completed"
+    }
+  },
+  "plots": [
+    "train_loss.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis: lr 0.1 with no warmup and no clipping stalls or diverges; warmup + clipping alone do not rescue it; lr 3e-3 does.\nSetup: tiny model, 400 steps, seed 0, three arms that differ only in lr / warmup / clipping.\nObserved: it did not produce NaNs (grad norm max 1.75; AdamW normalises step size). Instead it stalled: best val 4.078 bpb, worse than a bigram. Warmup + clipping at lr 0.1 reached 3.763 bpb, better but still poor. lr 3e-3 with warmup + clipping reached 3.422 bpb. Supported (broken > 3.0, fix 2 is > 0.5 bpb better).\nLimitations: one seed, 400 steps; the \"no NaN\" outcome depends on Adam. Plain SGD at this lr would likely diverge.\nNext test: the same arms with SGD + momentum, to show actual divergence and the non-finite handler.\nDecision: warmup and clipping stay on by default, and the lr comes from the optimization experiment. The trainer's non-finite handling is covered by test_divergence_is_detected_not_crashed.\n",
+  "table": [
+    {
+      "best_step": 360,
+      "device": "mps",
+      "ece": 0.021290816917581366,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.8912532329559326,
+      "params": 270816,
+      "run_id": "break-lr-broken-31ee17a1-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 400,
+      "tokenizer": "byte",
+      "tokens_seen": 3276800,
+      "train_subset_bpb": 4.105403928971521,
+      "val_bpb": 4.073664866365461,
+      "val_bpb_ci95": [
+        4.065588471689808,
+        4.082249862089778
+      ],
+      "val_loss": 2.8236493166673258,
+      "val_ppl_token": 16.838186561895238,
+      "wall_time_s": 19.1
+    },
+    {
+      "best_step": 400,
+      "device": "mps",
+      "ece": 0.005577182995907943,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.63576602935791,
+      "params": 270816,
+      "run_id": "break-lr-fix1-warmup-clip-d5ba728d-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 400,
+      "tokenizer": "byte",
+      "tokens_seen": 3276800,
+      "train_subset_bpb": 3.791973046476864,
+      "val_bpb": 3.749573561605262,
+      "val_bpb_ci95": [
+        3.741634623333504,
+        3.7573214531864627
+      ],
+      "val_loss": 2.5990063425287997,
+      "val_ppl_token": 13.450366335657623,
+      "wall_time_s": 15.9
+    },
+    {
+      "best_step": 400,
+      "device": "mps",
+      "ece": 0.011342798507879573,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.3858423233032227,
+      "params": 270816,
+      "run_id": "break-lr-fix2-lr3e-3-8991a8b4-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 400,
+      "tokenizer": "byte",
+      "tokens_seen": 3276800,
+      "train_subset_bpb": 3.4317228590088638,
+      "val_bpb": 3.403067831953726,
+      "val_bpb_ci95": [
+        3.395381507572395,
+        3.4102644436942295
+      ],
+      "val_loss": 2.358826872972971,
+      "val_ppl_token": 10.57853420597077,
+      "wall_time_s": 17.9
+    }
+  ],
+  "title": "Break the Model: learning rate far too high",
+  "track": "language-model",
+  "verdict": "supported",
+  "verdict_detail": "broken: completed, best val bpb 4.078; warmup+clip at lr 0.1: 3.763; lr 3e-3: 3.422"
+}

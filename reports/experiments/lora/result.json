@@ -1,0 +1,53 @@
+{
+  "analysis_git": "39112b3867dce5cf56c255b3f8fcc9fe1d203e2c",
+  "analyzed": "2026-11-09T05:31:15+00:00",
+  "arms": [
+    "reports/lora/distilgpt2-s0.json"
+  ],
+  "caveats": [
+    "distilgpt2 was pretrained on OpenWebText, which may contain Shakespeare: weaker held-out guarantee.",
+    "GPT-2 tokenizer and 256-token context (~4x the bytes of the byte models' context).",
+    "One seed; validation only; the locked test split is untouched."
+  ],
+  "criterion": "LoRA val bpb upper 95% CI < frozen val bpb lower 95% CI (full validation split).",
+  "experiment": "lora",
+  "hypothesis": "Written 2026-11-08 while the approved run was in progress, before any result was seen: LoRA adapters (r=8, alpha 16, on the attention c_attn projections; 300 steps x 8 x 256 GPT-2 tokens, lr 2e-4) lower distilgpt2's bits-per-byte on the held-out Shakespeare validation plays relative to the frozen model.",
+  "missing_runs": [],
+  "observations": {
+    "delta_bpb": -0.180794035176028,
+    "device": "mps",
+    "frozen_val": {
+      "bits_per_byte": 1.9410755078949462,
+      "bits_per_byte_ci95": [
+        1.9272990833348536,
+        1.9553618086170896
+      ],
+      "bytes_predicted": 425672,
+      "windows": 509
+    },
+    "lora_val": {
+      "bits_per_byte": 1.7602814727189182,
+      "bits_per_byte_ci95": [
+        1.7475294217879491,
+        1.7734149597605082
+      ],
+      "bytes_predicted": 425672,
+      "windows": 509
+    },
+    "memory_mb": 320.4,
+    "scratch_best_val_bpb": 2.007116951404068,
+    "steps": 300,
+    "total_params": 82060032,
+    "train_seconds": 106.4,
+    "train_tokens": 614400,
+    "trainable_params": 147456
+  },
+  "plots": [
+    "lora_loss.png"
+  ],
+  "researcher_note": "Hypothesis (written while the approved run was in progress, before results): LoRA adapters lower distilgpt2's validation bits-per-byte relative to the frozen model, with non-overlapping 95% intervals.\nSetup: distilgpt2 (82.06M params, downloaded from the Hugging Face Hub with the owner's approval on 2026-11-08). LoRA r=8, alpha 16, dropout 0.05 on the attention c_attn projections: 147,456 trainable params (0.18%). 300 steps x 8 x 256 GPT-2 tokens = 614K tokens (0.44 of an epoch over the 1.39M-token train split), lr 2e-4, seed 0, MPS. Evaluation: the full validation split (425,672 bytes, 509 windows of 256 GPT-2 tokens, context reset per window), using exact GPT-2 byte lengths (asserted to reconstruct the text).\nObserved: frozen 1.941 bpb [1.927, 1.955], LoRA 1.760 [1.748, 1.773], a drop of 0.181 bpb with clearly separated intervals. Supported. Training took 106 s, plus 40 s to load the model.\nContext: even frozen, distilgpt2 beats every model trained from scratch here (best 2.007 for BPE-1024-small on validation). That reflects ~41x more parameters and pretraining on far more text, not a better recipe for 4.5 MB of data.\nLimitations: distilgpt2's pretraining corpus (OpenWebText) may contain Shakespeare, so \"held-out\" is weaker than for the scratch models; the GPT-2 context covers ~4x more bytes; one seed; validation only (the locked test split was not opened for this run).\nProvenance note: the run recorded git dirty=true because analysis/report modules were being edited while it ran; src/morrowglass/finetune/lora.py was identical to commit 39112b3 (checked with git diff).\nNext test: full fine-tuning vs LoRA at matched steps, and r in {2, 8, 32}, on the same split.\nDecision: the pretrained + LoRA track is the strongest model in this repo; the scratch track remains the instrument for studying the internals.\n",
+  "title": "Pretrained adaptation: distilgpt2 + LoRA vs frozen",
+  "track": "pretrained",
+  "verdict": "supported",
+  "verdict_detail": "frozen 1.941 [1.927, 1.955] -> LoRA 1.760 [1.748, 1.773] val bpb; 147,456 of 82,060,032 params trained"
+}

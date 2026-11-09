@@ -1,0 +1,82 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:23:15+00:00",
+  "arms": [
+    "scarce-byte-medium-d0cf6f70-s0",
+    "scarce-byte-medium-dropout-es-1ec37376-s0"
+  ],
+  "caveats": [
+    "The broken arm is shared with the capacity experiment (same config hash)."
+  ],
+  "criterion": "Fix arm best val loss < broken arm best val loss, and fix arm stops early.",
+  "experiment": "break-overfit",
+  "hypothesis": "Medium model on the scarce sample overfits; dropout 0.2 + early stopping (patience 4) gives a lower best val loss and stops before the overfit regime.",
+  "missing_runs": [],
+  "observations": {
+    "broken_best_val_loss": 1.8855585323943007,
+    "broken_final_val_loss": 3.1428756284905246,
+    "broken_steps": 1500,
+    "fix_best_val_loss": 1.8410776246135383,
+    "fix_status": "early_stopped",
+    "fix_steps": 1200
+  },
+  "plots": [
+    "curves.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis: the 4.85M-parameter model memorises the 240 KB sample; dropout 0.2 + early stopping (patience 4 evals) gives a lower best val loss and stops before the overfit regime.\nSetup: scarce-byte-medium (no regularisation, 1,500 steps) vs scarce-byte-medium-dropout-es (dropout 0.2, early stopping), same seed and data.\nObserved: without regularisation, the best val loss was 1.886 at step 550 and the final val loss 3.143. With the fix, the best val loss was 1.841 and training stopped itself at step 1,200 (status early_stopped). Supported.\nLimitations: the improvement in best val loss is modest (0.045 nats). Most of the benefit is not wasting compute in the overfit regime and not shipping the last checkpoint. One seed.\nNext test: a dropout sweep {0.1, 0.2, 0.3} x 2 seeds, plus weight decay 0.3.\nDecision: always report the best-on-validation checkpoint (the trainer already does), and enable early stopping for scarce-data runs.\n",
+  "table": [
+    {
+      "best_step": 550,
+      "device": "mps",
+      "ece": 0.07167032380759443,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 0.39305901527404785,
+      "params": 4852992,
+      "run_id": "scarce-byte-medium-d0cf6f70-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 1500,
+      "tokenizer": "byte",
+      "tokens_seen": 12288000,
+      "train_subset_bpb": 2.065754303262274,
+      "val_bpb": 2.755750674509805,
+      "val_bpb_ci95": [
+        2.7030838841676808,
+        2.814815278248151
+      ],
+      "val_loss": 1.9101408103626387,
+      "val_ppl_token": 6.754039770365712,
+      "wall_time_s": 322.9
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.0808473285573119,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.3407328128814697,
+      "params": 4852992,
+      "run_id": "scarce-byte-medium-dropout-es-1ec37376-s0",
+      "seed": 0,
+      "status": "early_stopped",
+      "steps": 1200,
+      "tokenizer": "byte",
+      "tokens_seen": 9830400,
+      "train_subset_bpb": 1.9156146860506365,
+      "val_bpb": 2.688667999443733,
+      "val_bpb_ci95": [
+        2.6364248215404844,
+        2.748253904536201
+      ],
+      "val_loss": 1.863642643276172,
+      "val_ppl_token": 6.447178822581734,
+      "wall_time_s": 295.1
+    }
+  ],
+  "title": "Break the Model: memorising a 240 KB corpus, then a regularisation fix",
+  "track": "language-model",
+  "verdict": "supported",
+  "verdict_detail": "best val loss 1.886 -> 1.841; fix status early_stopped at step 1200"
+}

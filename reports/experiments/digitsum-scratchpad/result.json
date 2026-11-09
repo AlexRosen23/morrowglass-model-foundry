@@ -1,0 +1,143 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:59+00:00",
+  "arms": [
+    "digitsum-sp-plain-b231a0b3-s0",
+    "digitsum-sp-posaug-8fe76e50-s0",
+    "digitsum-sp-plain-43d26213-s1",
+    "digitsum-sp-posaug-65abe9b8-s1"
+  ],
+  "caveats": [
+    "Follow-up designed after seeing a failure; the original digit-sum experiment is kept and reported.",
+    "Evaluation is autoregressive: the model's own running sums are fed back; read-out restricted to digit tokens.",
+    "Chance accuracy is 10%.",
+    "Synthetic success is not evidence of general reasoning."
+  ],
+  "criterion": "Plain-position arms: val_iid acc > 0.95 and test_ood_far acc < 0.5. Pos-aug arms: OOD near and far accuracy higher than the plain arm with the same seed.",
+  "experiment": "digitsum-scratchpad",
+  "hypothesis": "Registered 2026-11-08 AFTER the plain digit-sum runs stayed at chance (loss = ln 10). With an interleaved running-sum scratchpad ('3,3;9,2;4,6;'), every step is local, so the 2-layer model learns the rule in-distribution (> 95% final-answer accuracy, autoregressive, on 3-6 terms). With learned absolute positions it still fails on longer inputs (12-16 terms < 50%) because those positions were never trained; random position offsets during training raise OOD accuracy for both seeds.",
+  "missing_runs": [],
+  "observations": {
+    "accuracy": {
+      "digitsum-sp-plain-s0": {
+        "test_ood_far_acc": 0.103,
+        "test_ood_near_acc": 0.108,
+        "train_acc": 1.0,
+        "val_iid_acc": 1.0
+      },
+      "digitsum-sp-plain-s1": {
+        "test_ood_far_acc": 0.0975,
+        "test_ood_near_acc": 0.105,
+        "train_acc": 1.0,
+        "val_iid_acc": 1.0
+      },
+      "digitsum-sp-posaug-s0": {
+        "test_ood_far_acc": 0.105,
+        "test_ood_near_acc": 0.346,
+        "train_acc": 0.99995,
+        "val_iid_acc": 1.0
+      },
+      "digitsum-sp-posaug-s1": {
+        "test_ood_far_acc": 0.8875,
+        "test_ood_near_acc": 0.9845,
+        "train_acc": 0.9997833333333334,
+        "val_iid_acc": 1.0
+      }
+    }
+  },
+  "plots": [
+    "val_iid.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis (registered after the plain digit-sum failure): with an interleaved running-sum scratchpad the 2-layer model learns the rule in-distribution (> 95%); with learned absolute positions it fails on 12-16 terms (< 50%); random position offsets raise OOD accuracy for both seeds.\nSetup: \"3,3;9,2;4,6;\" format, block 72, 2 layers x 4 heads x 128, 3,000 steps, seeds 0/1 x {plain positions, position augmentation}. Evaluation is free-running: the model's own running sums are fed back, and only the digits are given. Selection used val_iid only; the OOD splits were opened once (test-access log).\nObserved: all four runs reach 100.0% final-answer accuracy in distribution (3-6 terms). Plain positions: near-OOD (8-10 terms) 10.8% / 10.5% and far-OOD (12-16) 10.3% / 9.8% final-answer accuracy for seeds 0 / 1, i.e. chance. Per-step accuracy of ~70% (near) shows the model gets the early running sums right and fails once it reaches positions it never trained on. Position augmentation: seed 1 transfers almost perfectly (98.5% near, 88.8% far); seed 0 only partly (34.6% near, 10.5% far).\nVerdict caveat: the analysis code marks this \"supported\" because both pos-aug seeds beat their plain twins on both OOD splits. For seed 0 on far-OOD the margin is +0.2 points (10.5% vs 10.3%, n = 2,000, standard error ~0.7 points), which is noise. The honest reading: position augmentation can fix length generalisation here, but whether it does depends strongly on the seed, and two seeds cannot estimate how often.\nLimitations: two seeds; one model size; learned absolute positions only; a synthetic task, so this says nothing about general reasoning.\nNext test: 5+ seeds per arm, and RoPE / no-position variants on the same splits.\nDecision: report position-augmentation transfer as seed-dependent, never as a reliable fix; plain positions clearly do not extrapolate.\n",
+  "table": [
+    {
+      "best_step": 800,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 1.0659547911018308e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-b231a0b3-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 145.1
+    },
+    {
+      "best_step": 1200,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 1.3127212206143213e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-8fe76e50-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 114.6
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 3.71672577159643e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-43d26213-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 139.7
+    },
+    {
+      "best_step": 1600,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 3.6333742681193826e-09,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-65abe9b8-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 199.7
+    }
+  ],
+  "title": "Algorithmic transfer, follow-up: running-sum scratchpad under length shift",
+  "track": "algorithmic",
+  "verdict": "supported",
+  "verdict_detail": "digitsum-sp-plain-s0: iid 1.000 near 0.108 far 0.103; digitsum-sp-plain-s1: iid 1.000 near 0.105 far 0.098; digitsum-sp-posaug-s0: iid 1.000 near 0.346 far 0.105; digitsum-sp-posaug-s1: iid 1.000 near 0.985 far 0.887"
+}

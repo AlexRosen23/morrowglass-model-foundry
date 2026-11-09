@@ -1,0 +1,84 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:23:08+00:00",
+  "arms": [
+    "break-mask-long-noncausal-09c37c67-s0",
+    "break-mask-long-causal-388930e3-s0"
+  ],
+  "caveats": [
+    "Follow-up designed after seeing break-mask; that result is kept and reported.",
+    "Leak-free scoring uses only the final position of each window."
+  ],
+  "criterion": "Non-causal train loss < causal train loss AND non-causal leak-free bpb > causal leak-free bpb.",
+  "experiment": "break-mask-long",
+  "hypothesis": "Registered 2026-11-08 AFTER break-mask (400 steps) showed no collapse. Given 5x more steps, the mask-less model finds the copy-from-the-future shortcut: its training loss falls well below the causal model's, while leak-free last-position bpb is worse than the causal model's.",
+  "missing_runs": [],
+  "observations": {
+    "causal_last_train_loss": 1.5640711784362793,
+    "causal_leak_free_bpb": 2.5709003061422395,
+    "causal_windowed_val_bpb": 2.3874263149585926,
+    "leak_free_positions": 2048,
+    "noncausal_last_train_loss": 0.010061944834887981,
+    "noncausal_leak_free_bpb": 3.3786506420081466,
+    "noncausal_windowed_val_bpb_leaky": 0.013472849315787485
+  },
+  "plots": [
+    "train_loss.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis (registered after break-mask showed no collapse at 400 steps): given 2,000 steps, the mask-less model finds the copy-from-the-future shortcut; its training loss falls far below the causal model's, while leak-free bpb is worse.\nSetup: tiny model, 2,000 steps, seed 0; arms identical except causal=False. Leak-free scoring: the final position of 2,048 random validation windows (no future tokens exist there for any model).\nObserved: the shortcut appeared between steps 600 and 700. The non-causal model's final train loss was 0.010 nats against 1.564 for the causal model. Its windowed validation bpb, computed with the same leak, is 0.0135, a \"perfect\" score that is pure leakage. Leak-free scoring gives 3.379 bpb for the non-causal model against 2.571 for the causal one. Supported.\nLesson: a metric computed with the same leak as training looks almost perfect; only an evaluation that structurally cannot see the future reveals the failure.\nLimitations: one seed; the windowed metric shown for the non-causal arm is deliberately the leaky one.\nDecision: keep the mask, keep the leakage unit test as the guard, and evaluate any non-causal variant only with leak-free scoring.\n",
+  "table": [
+    {
+      "best_step": 2000,
+      "device": "mps",
+      "ece": 0.00019698994411680956,
+      "git_commit": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+      "git_dirty": false,
+      "last_train_loss": 0.010061944834887981,
+      "params": 270816,
+      "run_id": "break-mask-long-noncausal-09c37c67-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2000,
+      "tokenizer": "byte",
+      "tokens_seen": 16384000,
+      "train_subset_bpb": 0.0148258882032123,
+      "val_bpb": 0.013472849315787485,
+      "val_bpb_ci95": [
+        0.013077259991063782,
+        0.013869782143357087
+      ],
+      "val_loss": 0.009338667517347084,
+      "val_ppl_token": 1.0093824089289831,
+      "wall_time_s": 96.1
+    },
+    {
+      "best_step": 2000,
+      "device": "mps",
+      "ece": 0.007766320244161587,
+      "git_commit": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+      "git_dirty": false,
+      "last_train_loss": 1.5640711784362793,
+      "params": 270816,
+      "run_id": "break-mask-long-causal-388930e3-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2000,
+      "tokenizer": "byte",
+      "tokens_seen": 16384000,
+      "train_subset_bpb": 2.2755676541617387,
+      "val_bpb": 2.3874263149585926,
+      "val_bpb_ci95": [
+        2.3777846673006104,
+        2.3970916809420086
+      ],
+      "val_loss": 1.6548378190081683,
+      "val_ppl_token": 5.232231284904232,
+      "wall_time_s": 88.2
+    }
+  ],
+  "title": "Break the Model, follow-up: no causal mask for 2,000 steps",
+  "track": "language-model",
+  "verdict": "supported",
+  "verdict_detail": "train loss non-causal 0.010 vs causal 1.564; leak-free bpb 3.379 vs 2.571"
+}

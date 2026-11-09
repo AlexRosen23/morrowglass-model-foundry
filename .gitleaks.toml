@@ -1,3 +1,11 @@
 # gitleaks: default rules. Add allowlist entries only after confirming by hand that a finding is not a real secret.
 [extend]
 useDefault = true
+
+# Confirmed by hand 2026-11-08: run metadata records content hashes under keys such as
+# "tokenizer_sha256"; the word "token" trips generic-api-key. Only exact 64-hex sha256 digests
+# under a *_sha256 key are allowed; any other value under those keys is still scanned.
+[allowlist]
+description = "sha256 content digests in run metadata"
+regexTarget = "line"
+regexes = ['''"[a-z_]*sha256"\s*:\s*"[0-9a-f]{64}"''']

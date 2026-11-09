@@ -1,0 +1,7 @@
+Hypothesis: a 2-layer model learns digit-sum mod 10 in-distribution (> 95% on 3-6 terms) but fails on 8-10 and 12-16 terms; position augmentation narrows the gap.
+Setup: 2 layers x 4 heads x 128, block 48, batch 128, 3,000 steps, lr 1e-3; plain vs pos-aug arms, seeds 0 and 1. Loss only on the answer digit.
+Observed: the model never learned the rule. Validation accuracy stayed at 10.8-11.1% (chance 10%) and the loss stayed at 2.303 nats = ln 10, i.e. a uniform guess over digits, for all four runs. The locked OOD splits are also at chance (9.4-10.7%). The in-distribution half of the hypothesis is not supported, so the length-shift question cannot be answered from these runs.
+Diagnosis: (1) not a pipeline bug: tests/test_synthetic_learning.py::test_sumtask_pipeline_learns_a_copy_rule trains the same encoding, masking and evaluator on "answer = first digit" and reaches > 90% in 250 steps; (2) a sum mod 10 over 3-6 digits is parity-like: every digit matters equally, and gradient descent gets no partial credit until the whole aggregation exists, which is the known plateau behaviour of parity tasks.
+Limitations: two seeds, one model size, 3,000 steps; a much longer run or curriculum might escape the plateau (grokking-style), and that was not tested.
+Next test: digitsum-scratchpad (registered after this result): the same task with an interleaved running sum, so each step is local.
+Decision: keep this negative result in the report, and test length generalisation with the scratchpad format.

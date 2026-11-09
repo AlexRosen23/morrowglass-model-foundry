@@ -1,0 +1,46 @@
+{
+  "best_step": 100,
+  "best_val_iid_error": 0.8895,
+  "checkpoints": {
+    "best": {
+      "bytes": 5223401,
+      "path": "artifacts/checkpoints/digitsum-posaug-1551a6ac-s1/best.pt",
+      "saved": "2026-11-09T04:48:37+00:00",
+      "sha256": "c435d5a3ec92b18fc24d791483f0687cf5e46c73e28f7ec2be3707992b664f47",
+      "step": 100
+    },
+    "last": {
+      "bytes": 5223401,
+      "path": "artifacts/checkpoints/digitsum-posaug-1551a6ac-s1/last.pt",
+      "saved": "2026-11-09T04:50:00+00:00",
+      "sha256": "8e543a7dc76233025a7eed042586fa35f12bc5a67c50262fe38f98ebc9c9ed78",
+      "step": 3000
+    }
+  },
+  "experiment": "digitsum",
+  "failure": null,
+  "final": {
+    "train": {
+      "accuracy": 0.10156666666666667,
+      "error": 0.8984333333333333,
+      "loss": 2.3684837753295898,
+      "n": 60000
+    },
+    "val_iid": {
+      "accuracy": 0.1105,
+      "error": 0.8895,
+      "loss": 2.3642330322265623,
+      "n": 2000
+    }
+  },
+  "final_eval_on": "best checkpoint",
+  "finished": "2026-11-09T04:50:02+00:00",
+  "mean_tokens_per_s": 215907.1,
+  "params": 432768,
+  "run_id": "digitsum-posaug-1551a6ac-s1",
+  "skipped_steps": 0,
+  "status": "completed",
+  "steps_completed": 3000,
+  "tokens_seen": 18432000,
+  "wall_time_s": 85.4
+}

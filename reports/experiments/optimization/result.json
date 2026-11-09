@@ -1,0 +1,302 @@
+{
+  "analysis_git": "13867f10e6887e5515c2748f08c1c1633e57d30b",
+  "analyzed": "2026-11-09T05:22:58+00:00",
+  "arms": [
+    "opt-lr1e-3-cos-c19019e2-s0",
+    "opt-lr3e-3-cos-02b41a5f-s0",
+    "opt-lr3e-3-const-nowarm-9305a8d0-s0",
+    "opt-lr1e-3-cos-974d83cf-s1",
+    "opt-lr3e-3-cos-91a817f6-s1",
+    "opt-lr3e-3-const-nowarm-d4733739-s1",
+    "opt-lr1e-3-cos-2fd808a0-s2",
+    "opt-lr3e-3-cos-9ec26c43-s2",
+    "opt-lr3e-3-const-nowarm-5130eb0a-s2"
+  ],
+  "caveats": [
+    "Three seeds give a range, not a confidence interval.",
+    "Seeds change both initialisation and batch order."
+  ],
+  "criterion": "Mean val bpb ordered as hypothesised and the [min, max] ranges across seeds do not overlap.",
+  "experiment": "optimization",
+  "hypothesis": "For the tiny model at 1000 steps, lr 3e-3 with warmup+cosine beats lr 1e-3 cosine and beats lr 3e-3 constant without warmup, by more than the seed-to-seed range.",
+  "missing_runs": [],
+  "observations": {
+    "by_config": {
+      "opt-lr1e-3-cos": {
+        "max": 3.213478825278691,
+        "mean": 3.187736905006213,
+        "min": 3.139365105380993,
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "stdev": 0.04192009600309101,
+        "val_bpb": [
+          3.2103667843589556,
+          3.213478825278691,
+          3.139365105380993
+        ]
+      },
+      "opt-lr3e-3-const-nowarm": {
+        "max": 2.6624687570977184,
+        "mean": 2.6227134010894306,
+        "min": 2.552361541417991,
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "stdev": 0.06109835728963915,
+        "val_bpb": [
+          2.552361541417991,
+          2.6624687570977184,
+          2.6533099047525814
+        ]
+      },
+      "opt-lr3e-3-cos": {
+        "max": 2.6595267640423055,
+        "mean": 2.643737694566677,
+        "min": 2.6206581640003535,
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "stdev": 0.020434165862386184,
+        "val_bpb": [
+          2.6595267640423055,
+          2.6510281556573716,
+          2.6206581640003535
+        ]
+      }
+    }
+  },
+  "plots": [
+    "seeds.png"
+  ],
+  "profile": "standard",
+  "researcher_note": "Hypothesis: for the tiny model at 1,000 steps, lr 3e-3 with warmup + cosine beats lr 1e-3 + cosine and beats lr 3e-3 constant without warmup, by more than the seed-to-seed range.\nSetup: 3 configurations x seeds {0, 1, 2}; 1,000 steps x 8,192 tokens; seeds change both initialisation and batch order.\nObserved: lr 1e-3 is clearly worse: mean 3.188 bpb [3.139, 3.213]. lr 3e-3 cosine has mean 2.644 [2.621, 2.660]; lr 3e-3 constant without warmup has mean 2.623 [2.552, 2.663]. The two lr 3e-3 schedules overlap, and the constant schedule's mean is slightly better. Its seed spread is 3x larger (stdev 0.061 vs 0.020) and its best seed (2.552) is an outlier. Not supported.\nInterpretation (untested): in a short 1,000-step run, cosine decays the lr toward 3e-4, which may cost progress late in training; warmup did not matter for this model at 3e-3.\nLimitations: 3 seeds give a range, not an interval; only one model size and one horizon.\nNext test: same grid at 3,000 steps, plus lr 6e-3, to see whether the schedule ranking flips with a longer horizon.\nDecision: keep warmup + cosine as the default for long runs (lower variance across seeds), and stop claiming it is better for short runs.\n",
+  "table": [
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.01834503732954597,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.239253282546997,
+      "params": 270816,
+      "run_id": "opt-lr1e-3-cos-c19019e2-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 3.235609753370451,
+      "val_bpb": 3.2103667843589556,
+      "val_bpb_ci95": [
+        3.202691689335994,
+        3.218097592893821
+      ],
+      "val_loss": 2.2252566851417077,
+      "val_ppl_token": 9.255858340321112,
+      "wall_time_s": 33.6
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.009870821493273304,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.823171854019165,
+      "params": 270816,
+      "run_id": "opt-lr3e-3-cos-02b41a5f-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 2.667371976254872,
+      "val_bpb": 2.6595267640423055,
+      "val_bpb_ci95": [
+        2.650908943841493,
+        2.6681386383984185
+      ],
+      "val_loss": 1.843443478119639,
+      "val_ppl_token": 6.31825762637613,
+      "wall_time_s": 35.2
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.01827282125236481,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.6930582523345947,
+      "params": 270816,
+      "run_id": "opt-lr3e-3-const-nowarm-9305a8d0-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 2.4904317398252487,
+      "val_bpb": 2.552361541417991,
+      "val_bpb_ci95": [
+        2.543374094057913,
+        2.5616489714716595
+      ],
+      "val_loss": 1.7691622062035166,
+      "val_ppl_token": 5.865936856652526,
+      "wall_time_s": 40.8
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.019576122022763834,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.241520404815674,
+      "params": 270816,
+      "run_id": "opt-lr1e-3-cos-974d83cf-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 3.246870140631912,
+      "val_bpb": 3.213478825278691,
+      "val_bpb_ci95": [
+        3.2059223973367237,
+        3.221452546620061
+      ],
+      "val_loss": 2.2274137875310096,
+      "val_ppl_token": 9.275845724128482,
+      "wall_time_s": 43.8
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.01062398908848048,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.802272081375122,
+      "params": 270816,
+      "run_id": "opt-lr3e-3-cos-91a817f6-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 2.655715250992455,
+      "val_bpb": 2.6510281556573716,
+      "val_bpb_ci95": [
+        2.6425562018613107,
+        2.6600406377640886
+      ],
+      "val_loss": 1.8375526916789386,
+      "val_ppl_token": 6.281147531158865,
+      "wall_time_s": 43.3
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.005756548759205794,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.774378776550293,
+      "params": 270816,
+      "run_id": "opt-lr3e-3-const-nowarm-d4733739-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 2.6273366851753845,
+      "val_bpb": 2.6624687570977184,
+      "val_bpb_ci95": [
+        2.65331815756759,
+        2.6717876655932202
+      ],
+      "val_loss": 1.8454827123112254,
+      "val_ppl_token": 6.3311551794551875,
+      "wall_time_s": 36.9
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.01462475099871902,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.191711187362671,
+      "params": 270816,
+      "run_id": "opt-lr1e-3-cos-2fd808a0-s2",
+      "seed": 2,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 3.1732655846834215,
+      "val_bpb": 3.139365105380993,
+      "val_bpb_ci95": [
+        3.1314208861816653,
+        3.1474068796907444
+      ],
+      "val_loss": 2.1760420715431112,
+      "val_ppl_token": 8.81136240968523,
+      "wall_time_s": 32.4
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.008012409419440527,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.7622716426849365,
+      "params": 270816,
+      "run_id": "opt-lr3e-3-cos-9ec26c43-s2",
+      "seed": 2,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 2.6222225971403224,
+      "val_bpb": 2.6206581640003535,
+      "val_bpb_ci95": [
+        2.6120855498739974,
+        2.629324621512522
+      ],
+      "val_loss": 1.8165018175882477,
+      "val_ppl_token": 6.15030588259099,
+      "wall_time_s": 33.4
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": 0.006511954070850424,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.7478619813919067,
+      "params": 270816,
+      "run_id": "opt-lr3e-3-const-nowarm-5130eb0a-s2",
+      "seed": 2,
+      "status": "completed",
+      "steps": 1000,
+      "tokenizer": "byte",
+      "tokens_seen": 8192000,
+      "train_subset_bpb": 2.6195365962785675,
+      "val_bpb": 2.6533099047525814,
+      "val_bpb_ci95": [
+        2.6443227321086393,
+        2.662765847460739
+      ],
+      "val_loss": 1.8391342796310288,
+      "val_ppl_token": 6.291089578458124,
+      "wall_time_s": 35.0
+    }
+  ],
+  "title": "Learning rate and schedule, 3 seeds each",
+  "track": "language-model",
+  "verdict": "not supported",
+  "verdict_detail": "opt-lr1e-3-cos: mean 3.1877 [3.1394, 3.2135]; opt-lr3e-3-cos: mean 2.6437 [2.6207, 2.6595]; opt-lr3e-3-const-nowarm: mean 2.6227 [2.5524, 2.6625]"
+}

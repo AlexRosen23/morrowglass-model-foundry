@@ -1,0 +1,20 @@
+{
+  "evaluated": "2026-11-09T05:52:05+00:00",
+  "model": {
+    "model": "kneser-ney-4",
+    "order": 4,
+    "tokenizer": "bpe1024"
+  },
+  "reason": "Final evaluation of the pre-registered flagship recipe at the owner-approved extended budget (10k steps); selected on validation (best step 8400); no further tuning follows.",
+  "test": {
+    "bits_per_byte": 2.191377295146292,
+    "bits_per_byte_ci95": [
+      2.175561683243917,
+      2.2063144079458343
+    ],
+    "bytes_predicted": 377276,
+    "loss_nats_per_token": 3.546857664435942,
+    "perplexity_per_token": 34.704094060163264,
+    "tokens_predicted": 161569
+  }
+}

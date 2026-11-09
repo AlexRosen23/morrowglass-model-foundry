@@ -1,0 +1,53 @@
+{
+  "model": {
+    "bias": false,
+    "block_size": 48,
+    "causal": true,
+    "d_ff": null,
+    "d_model": 128,
+    "dropout": 0.0,
+    "n_head": 4,
+    "n_layer": 2,
+    "pos_encoding": "learned",
+    "tie_weights": true,
+    "vocab_size": 256
+  },
+  "train": {
+    "batch_size": 128,
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "checkpoint_interval": 3000,
+    "dataset": "synthetic",
+    "device": "auto",
+    "early_stopping_patience": 0,
+    "eval_interval": 100,
+    "eval_windows": 64,
+    "experiment": "digitsum",
+    "grad_accum": 1,
+    "grad_clip": 1.0,
+    "log_interval": 30,
+    "lr": 0.001,
+    "max_bad_steps": 5,
+    "max_minutes": 0.0,
+    "max_steps": 3000,
+    "min_lr_ratio": 0.1,
+    "model": {
+      "block_size": 48,
+      "d_model": 128,
+      "n_head": 4,
+      "n_layer": 2
+    },
+    "name": "digitsum-posaug",
+    "nan_policy": "abort",
+    "notes": "",
+    "num_threads": 4,
+    "pos_augment": true,
+    "profile": "standard",
+    "schedule": "cosine",
+    "seed": 0,
+    "task": "digitsum",
+    "tokenizer": "byte",
+    "warmup_steps": 200,
+    "weight_decay": 0.1
+  }
+}

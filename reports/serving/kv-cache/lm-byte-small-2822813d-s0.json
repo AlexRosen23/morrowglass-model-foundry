@@ -1,0 +1,219 @@
+{
+  "block_size": 256,
+  "caveats": [
+    "Shared machine with other workloads; numbers are indicative, not a controlled benchmark.",
+    "prompt + new tokens stay within block_size (256): beyond it the window slides and every step recomputes (the cache cannot be reused with learned absolute positions)."
+  ],
+  "checkpoint_sha256": "cdf945992983bc45faace8423f474df9029af7e1654c38f9af3507884b4ab550",
+  "checks": {
+    "faster_at_every_length_cpu": true,
+    "logits_within_1e-4": true,
+    "same_tokens": true,
+    "speedup_grows_with_prompt_cpu": true
+  },
+  "command": "morrowglass bench-kv lm-byte-small-2822813d-s0",
+  "criterion": "CPU: identical greedy tokens AND max |logit difference| < 1e-4 AND speedup > 1 at every prompt length AND speedup(longest) > speedup(shortest). MPS numbers are reported without a criterion.",
+  "equivalence_cpu": [
+    {
+      "cache_stats": {
+        "cached_step": 63,
+        "full_recompute": 0,
+        "prefill": 1
+      },
+      "max_abs_logit_diff": 1.5735626220703125e-05,
+      "prompt_tokens": 16,
+      "same_tokens": true
+    },
+    {
+      "cache_stats": {
+        "cached_step": 63,
+        "full_recompute": 0,
+        "prefill": 1
+      },
+      "max_abs_logit_diff": 1.71661376953125e-05,
+      "prompt_tokens": 64,
+      "same_tokens": true
+    },
+    {
+      "cache_stats": {
+        "cached_step": 63,
+        "full_recompute": 0,
+        "prefill": 1
+      },
+      "max_abs_logit_diff": 1.52587890625e-05,
+      "prompt_tokens": 192,
+      "same_tokens": true
+    }
+  ],
+  "evaluation": "kv-cache",
+  "git": {
+    "branch": "feat/ai-engineer-readiness",
+    "commit": "cf1c16d3285675080b4af3193448ed6a545e97d8",
+    "dirty": false
+  },
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "cpu_count": 18,
+    "ram_gb": 48.0,
+    "torch": "2.15.0"
+  },
+  "hypothesis": "Cached greedy decoding of a real checkpoint produces the same tokens as uncached decoding with logits within 1e-4 on CPU. On CPU, cached decoding has higher tokens/s than uncached at every prompt length, and the speed-up at the longest prompt is larger than at the shortest.",
+  "measured": "2026-11-09T16:37:24+00:00",
+  "params": 1869504,
+  "protocol": {
+    "batch": 1,
+    "decoding": "greedy",
+    "devices": [
+      "cpu",
+      "mps"
+    ],
+    "new_tokens": 64,
+    "prompt_source": "start of the validation split (never test)",
+    "prompt_tokens": [
+      16,
+      64,
+      192
+    ],
+    "repeats": 5,
+    "statistic": "median over repeats",
+    "torch_threads": 2
+  },
+  "provenance": "measured",
+  "rows": [
+    {
+      "decode_ms_per_token": 2.454,
+      "device": "cpu",
+      "kv_cache": false,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 4.241,
+      "prompt_tokens": 16,
+      "tokens_per_s": 364.4,
+      "ttft_ms": 1.781
+    },
+    {
+      "decode_ms_per_token": 0.938,
+      "device": "cpu",
+      "kv_cache": true,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 1.813,
+      "prompt_tokens": 16,
+      "tokens_per_s": 903.8,
+      "ttft_ms": 1.64
+    },
+    {
+      "decode_ms_per_token": 3.836,
+      "device": "cpu",
+      "kv_cache": false,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 5.936,
+      "prompt_tokens": 64,
+      "tokens_per_s": 240.3,
+      "ttft_ms": 3.106
+    },
+    {
+      "decode_ms_per_token": 1.109,
+      "device": "cpu",
+      "kv_cache": true,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 1.649,
+      "prompt_tokens": 64,
+      "tokens_per_s": 785.5,
+      "ttft_ms": 3.145
+    },
+    {
+      "decode_ms_per_token": 8.321,
+      "device": "cpu",
+      "kv_cache": false,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 13.86,
+      "prompt_tokens": 192,
+      "tokens_per_s": 109.4,
+      "ttft_ms": 8.733
+    },
+    {
+      "decode_ms_per_token": 1.86,
+      "device": "cpu",
+      "kv_cache": true,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 3.998,
+      "prompt_tokens": 192,
+      "tokens_per_s": 398.6,
+      "ttft_ms": 13.069
+    },
+    {
+      "decode_ms_per_token": 6.032,
+      "device": "mps",
+      "kv_cache": false,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 8.817,
+      "prompt_tokens": 16,
+      "tokens_per_s": 138.5,
+      "ttft_ms": 6.578
+    },
+    {
+      "decode_ms_per_token": 5.955,
+      "device": "mps",
+      "kv_cache": true,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 11.163,
+      "prompt_tokens": 16,
+      "tokens_per_s": 112.5,
+      "ttft_ms": 6.876
+    },
+    {
+      "decode_ms_per_token": 5.919,
+      "device": "mps",
+      "kv_cache": false,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 9.179,
+      "prompt_tokens": 64,
+      "tokens_per_s": 134.9,
+      "ttft_ms": 4.803
+    },
+    {
+      "decode_ms_per_token": 6.313,
+      "device": "mps",
+      "kv_cache": true,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 9.335,
+      "prompt_tokens": 64,
+      "tokens_per_s": 129.9,
+      "ttft_ms": 5.707
+    },
+    {
+      "decode_ms_per_token": 7.125,
+      "device": "mps",
+      "kv_cache": false,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 10.03,
+      "prompt_tokens": 192,
+      "tokens_per_s": 119.1,
+      "ttft_ms": 10.535
+    },
+    {
+      "decode_ms_per_token": 6.091,
+      "device": "mps",
+      "kv_cache": true,
+      "new_tokens": 64,
+      "p90_decode_ms_per_token": 8.855,
+      "prompt_tokens": 192,
+      "tokens_per_s": 138.5,
+      "ttft_ms": 5.671
+    }
+  ],
+  "run_id": "lm-byte-small-2822813d-s0",
+  "speedup_tokens_per_s": {
+    "cpu": {
+      "16": 2.48,
+      "192": 3.644,
+      "64": 3.269
+    },
+    "mps": {
+      "16": 0.812,
+      "192": 1.163,
+      "64": 0.963
+    }
+  },
+  "threads": 2,
+  "verdict": "supported"
+}

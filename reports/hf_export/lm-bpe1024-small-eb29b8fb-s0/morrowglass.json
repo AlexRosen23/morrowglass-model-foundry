@@ -1,0 +1,38 @@
+{
+  "export_git": {
+    "branch": "feat/ai-engineer-readiness",
+    "commit": "9fca106b6479698caadc5c7737949c36858e2735",
+    "dirty": false
+  },
+  "exported": "2026-11-09T19:19:31+00:00",
+  "files": {
+    "README.md": {
+      "bytes": 4452,
+      "sha256": "215cbb027b0d4a2b702a9d2d7861c98bf7d02ae466361441aec43d4609fc623c"
+    },
+    "config.json": {
+      "bytes": 215,
+      "sha256": "8e1fabcfd3a0c9ff382231112cb074002806f562e52cb595181b018d658b13f2"
+    },
+    "model.safetensors": {
+      "bytes": 8070312,
+      "sha256": "80782060e048f669853f09df212ba8b08fe74057c71368248948d3578a8ff3c2"
+    },
+    "tokenizer.json": {
+      "bytes": 20083,
+      "sha256": "5d3ccb7ec33adca60fde5a61dfacb638f86c2273855702329e3b79de10bbd30a"
+    }
+  },
+  "format": "huggingface_hub PyTorchModelHubMixin (model.safetensors + config.json)",
+  "load": "morrowglass.hub.MorrowglassHubLM.from_pretrained(<folder or repo id>)",
+  "publish_command_after_owner_approval": "uv run hf upload AlexRosen23/morrowglass-lm-bpe1024-small-eb29b8fb-s0 artifacts/hf_export/lm-bpe1024-small-eb29b8fb-s0 . --repo-type model --private",
+  "published": false,
+  "roundtrip_max_abs_logit_diff": 0.0,
+  "run_id": "lm-bpe1024-small-eb29b8fb-s0",
+  "source_checkpoint_sha256": "9d03a6b37a6dbb6577fc1420ed2cd4228326339602c04c9a04437bd2b6edfd2d",
+  "tokenizer": {
+    "file": "tokenizer.json",
+    "name": "bpe1024",
+    "sha256": "5d3ccb7ec33adca60fde5a61dfacb638f86c2273855702329e3b79de10bbd30a"
+  }
+}

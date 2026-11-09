@@ -5,7 +5,8 @@ API_PORT ?= 5100
 WEB_PORT ?= 5101
 
 .PHONY: help setup data smoke test test-fast lint typecheck web-check ci demo api web standard analyze report \
-        final-test bench export reproduce-scratch clean distclean
+        final-test bench export reproduce-scratch clean distclean serve-openai bench-kv quant-int8 \
+        lm-eval-setup lm-eval export-hf serving-report
 
 help:
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -60,6 +61,36 @@ analyze: ## Verdicts + plots from saved runs
 
 report: analyze ## RESULTS.md, EXPERIMENT_REPORT.md, HTML report, resume_evidence/metrics.json
 	$(MG) report
+
+# ---- serving (needs local checkpoints of the flagship and BPE runs; see docs/SERVING.md)
+FLAGSHIP ?= lm-byte-small-2822813d-s0
+BPE ?= lm-bpe1024-small-eb29b8fb-s0
+
+serve-openai: ## API + OpenAI-compatible /v1 on 127.0.0.1:$(API_PORT), default model $(FLAGSHIP)
+	$(MG) serve --port $(API_PORT) --model $(FLAGSHIP)
+
+bench-kv: ## Registered KV-cache study (equivalence + tokens/s, CPU and MPS)
+	$(MG) bench-kv $(FLAGSHIP)
+	$(MG) bench-kv $(BPE)
+
+quant-int8: ## Registered dynamic-int8 study (CPU)
+	$(MG) quant-int8 $(FLAGSHIP)
+	$(MG) quant-int8 $(BPE)
+
+lm-eval-setup: ## Pinned lm-evaluation-harness in .venv-lmeval (separate from the project env)
+	$(UV) venv .venv-lmeval --python 3.12
+	VIRTUAL_ENV=.venv-lmeval $(UV) pip sync eval/lm-eval-requirements.txt
+
+lm-eval: ## Harness through /v1/completions on 127.0.0.1:5102, every registered model (~2.5 h on a busy M5 Pro)
+	$(MG) lm-eval
+
+export-hf: ## Hub-compatible folders (safetensors + config + model card); local only, never published
+	$(MG) export-hf $(FLAGSHIP)
+	$(MG) export-hf lm-byte-small-240f8c28-s0
+	$(MG) export-hf $(BPE)
+
+serving-report: ## docs/SERVING_RESULTS.md from the saved serving records
+	$(MG) serving-report
 
 reproduce-scratch: ## Re-run the flagship from scratch into a fresh run (keeps the original)
 	$(MG) baselines

@@ -12,6 +12,9 @@ dependencies = [
   "fastapi==0.162.2",
   "uvicorn==0.54.0",
   "matplotlib==3.11.2",
+  "huggingface-hub==0.36.2",  # PyTorchModelHubMixin export (local save only)
+  "safetensors==0.8.0",
+  "jinja2==3.1.6",  # chat template for /v1/chat/completions
 ]
 
 [project.optional-dependencies]
@@ -52,6 +55,8 @@ ignore = ["RUF001", "RUF002", "RUF003", "E741"]
 # Report/analysis modules build long human-readable f-strings; tests contain long literal fixtures.
 "src/morrowglass/experiments/*.py" = ["E501", "RUF005"]
 "src/morrowglass/contracts.py" = ["E501"]
+"src/morrowglass/hub.py" = ["E501"]  # builds a Markdown model card
+"src/morrowglass/serving/report.py" = ["E501"]
 "tests/*.py" = ["E501"]
 
 [tool.mypy]

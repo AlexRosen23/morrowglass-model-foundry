@@ -1,0 +1,63 @@
+{
+  "caveats": [
+    "torch.ao.quantization is deprecated in torch 2.15 (torchao is the successor); it still runs here.",
+    "At ~2M parameters the model is small enough that quantize/dequantize overhead can outweigh the savings."
+  ],
+  "checkpoint_sha256": "cdf945992983bc45faace8423f474df9029af7e1654c38f9af3507884b4ab550",
+  "checks": {
+    "abs_delta_val_bpb_below_0.01": true,
+    "int8_faster_decode": false
+  },
+  "command": "morrowglass quant-int8 lm-byte-small-2822813d-s0",
+  "criterion": "|val bpb(int8) - val bpb(fp32)| < 0.01 AND decode tokens/s(int8) > tokens/s(fp32), per run.",
+  "delta_val_bpb": 0.0016458653379691768,
+  "evaluation": "int8-dynamic",
+  "fp32": {
+    "decode_ms_per_token": 27.457,
+    "tokens_per_s": 33.3,
+    "val_bpb": 2.0858428664193926,
+    "val_bpb_ci95": [
+      2.0743702361750604,
+      2.097796791844464
+    ],
+    "weights_mb": 7.141
+  },
+  "git": {
+    "branch": "feat/ai-engineer-readiness",
+    "commit": "39874747e31d4ec7d4233b618e5ba6544ca5deb9",
+    "dirty": false
+  },
+  "greedy_token_agreement_64": 0.203125,
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "cpu_count": 18,
+    "ram_gb": 48.0,
+    "torch": "2.15.0"
+  },
+  "hypothesis": "Dynamic int8 (torch.ao quantize_dynamic, qnnpack, nn.Linear only) changes validation bpb by less than 0.01 and raises cached greedy decode tokens/s on CPU.",
+  "int8": {
+    "decode_ms_per_token": 30.563,
+    "tokens_per_s": 25.6,
+    "val_bpb": 2.087488731757362,
+    "val_bpb_ci95": [
+      2.0760759292091664,
+      2.099469342744916
+    ],
+    "weights_mb": 2.169
+  },
+  "measured": "2026-11-09T17:05:07+00:00",
+  "protocol": {
+    "decode": "cached greedy, 64-token prompt + 64 new tokens, 5 repeats, median",
+    "device": "cpu",
+    "engine": "qnnpack",
+    "modules": "nn.Linear (qkv, proj, mlp, lm_head); embeddings fp32",
+    "torch_threads": 2,
+    "val_bpb": "full validation split, the project's own windowed evaluator"
+  },
+  "provenance": "measured",
+  "quantized_engine": "qnnpack",
+  "run_id": "lm-byte-small-2822813d-s0",
+  "speedup_tokens_per_s": 0.769,
+  "threads": 2,
+  "verdict": "not supported"
+}

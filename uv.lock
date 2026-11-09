@@ -454,12 +454,15 @@ wheels = [
 
 [[package]]
 name = "morrowglass"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "huggingface-hub" },
+    { name = "jinja2" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "safetensors" },
     { name = "tokenizers" },
     { name = "torch", version = "2.15.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux'" },
     { name = "torch", version = "2.15.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'linux'" },
@@ -485,9 +488,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = "==0.162.2" },
+    { name = "huggingface-hub", specifier = "==0.36.2" },
+    { name = "jinja2", specifier = "==3.1.6" },
     { name = "matplotlib", specifier = "==3.11.2" },
     { name = "numpy", specifier = "==2.5.4" },
     { name = "peft", marker = "extra == 'hf'", specifier = "==0.21.2" },
+    { name = "safetensors", specifier = "==0.8.0" },
     { name = "tokenizers", specifier = "==0.22.2" },
     { name = "torch", marker = "sys_platform != 'linux'", specifier = "==2.15.0" },
     { name = "torch", marker = "sys_platform == 'linux'", specifier = "==2.15.0", index = "https://download.pytorch.org/whl/cpu" },

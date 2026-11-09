@@ -1,5 +1,7 @@
 # Morrowglass Model Foundry
 
+[![ci](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml)
+
 A reproducible miniature language-model laboratory: a decoder-only Transformer written in plain
 PyTorch, trained from scratch on public-domain Shakespeare, measured against strong count-based
 baselines, and studied with pre-registered ablations. Every number in the workbench and the docs
@@ -7,6 +9,47 @@ is read from a saved run record.
 
 > CI: `.github/workflows/ci.yml` runs on GitHub Actions for pull requests and pushes to `main`
 > (enabled with the owner's approval on 2026-11-08). `make ci` runs the same checks locally.
+
+## For AI Engineer reviewers (60 seconds)
+
+```bash
+make setup && make test                                   # all CPU, no downloads, no API keys
+uv run morrowglass serve --model <run_id>                 # OpenAI-compatible API on 127.0.0.1:5100 (needs a local checkpoint)
+curl -s 127.0.0.1:5100/v1/completions -H 'Content-Type: application/json' -d '{"prompt":"HAMLET.\n","max_tokens":60,"seed":0}'
+```
+
+What to look at:
+- **Serving.** A KV cache in a from-scratch PyTorch Transformer, tested to give the same logits as
+  the uncached path. OpenAI-compatible `/v1/completions` (echo, logprobs, stop, seed, SSE) and
+  `/v1/chat/completions`. Code: [`serving/openai_api.py`](src/morrowglass/serving/openai_api.py).
+- **Standard evals.** EleutherAI lm-evaluation-harness, run *through that endpoint*, and
+  cross-checked against the in-house evaluator.
+- **Artifacts.** Hugging Face Hub-compatible export (safetensors + config + an auto-filled model card),
+  saved locally and not published.
+- **Method.** Every study is registered (hypothesis + criterion) before it runs, and negative results
+  stay in.
+
+Headline numbers (each from a saved record):
+
+| what | measured | record |
+|---|---|---|
+| KV cache, CPU decode, batch 1 (flagship) | 364 → 904 tok/s at a 16-token prompt (2.48x); 109 → 399 tok/s at 192 tokens (3.64x); greedy tokens identical, max \|Δlogit\| 1.7e-5 | `reports/serving/kv-cache/` |
+| KV cache on MPS | no reliable gain (0.81-1.16x): kernel launches dominate at 2M params | same |
+| lm-eval-harness through `/v1/completions`: our val split | harness 2.0847 vs own evaluator 2.0858 bits/byte (plumbing check, all 3 runs within 0.0012) | `reports/lm_eval/summary.json` |
+| lm-eval-harness: lambada_openai acc / wikitext bits/byte | scratch 0.0002 / 3.40 (flagship) vs distilgpt2 0.2498 / 1.069 (expected: 2M params, Shakespeare only) | same |
+| Hub export round trip | max \|Δlogit\| 0.0 after `from_pretrained` (safetensors, 7.5 MB) | `reports/hf_export/` |
+| Dynamic int8 on CPU | val bpb +0.0016, weights 7.1 → 2.2 MB, but decode **0.77x** (slower): registered hypothesis not supported | `reports/serving/int8/` |
+
+Read next:
+- [AI Engineer readiness](docs/AI_ENGINEER_READINESS.md): which posting asks this covers and which it does not.
+- [Serving](docs/SERVING.md): how it works.
+- [Serving results](docs/SERVING_RESULTS.md): generated tables.
+
+![Serving tab: KV-cache study](docs/media/serving-kv-cache.png)
+
+![lm-evaluation-harness through the API](docs/media/serving-harness.png) ![Live call to /v1/completions](docs/media/serving-openai-live.png)
+
+A short walkthrough recording of the UI (Playwright, `scripts/record_walkthrough.cjs`) is in [docs/media/walkthrough.webm](docs/media/walkthrough.webm).
 
 ## Results at a glance
 
@@ -87,9 +130,11 @@ src/morrowglass/
                            non-finite handling, sha256-verified checkpoints, resume
   eval/                    bits/byte, bootstrap CIs, calibration (ECE), Kneser-Ney baselines
   experiments/             pre-registered registry → runner → analysis → report; locked final test
-  inference/               sampling with per-token scores, attention maps, latency benchmark
+  inference/               sampling with per-token scores, KV cache decoder, attention maps, latency + int8 benchmarks
+  serving/                 OpenAI-compatible /v1 endpoints, backends, lm-evaluation-harness runner, results report
+  hub.py                   Hugging Face Hub-compatible export (PyTorchModelHubMixin) + auto-filled model card
   finetune/lora.py         pretrained distilgpt2 + LoRA vs frozen (executed with owner approval)
-  api/                     FastAPI (127.0.0.1:5100) + derived SQLite ledger index
+  api/                     FastAPI (127.0.0.1:5100) + derived SQLite ledger index (+ /v1 from serving/)
   contracts.py             portable model-artifact manifest (contracts/model_artifact_v1.schema.json)
 web/                       Vite + React + TypeScript workbench (127.0.0.1:5101)
 reports/runs/<run_id>/     config, metadata (commit, seed, hashes, hardware), metrics.jsonl, summary
@@ -100,10 +145,11 @@ The workbench has three panels:
 - **Model blueprint**: layer shapes and parameter counts.
 - **Evidence**: overlaid curves with exact config diffs, held-out metrics, reliability diagram, findings, Break the Model, live generation next to the n-gram baseline, attention heads.
 - **Ledger**: seed, commit, config hash, the test-access log.
+- **Serving** tab: the KV-cache, int8 and harness results, plus a live `POST /v1/completions` call.
 
-Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, `space`, `1-6`, `t`, `?`.
+Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, `space`, `1-7`, `t`, `?`.
 
-## Guarantees backed by tests (`make test`: 89 passing, see `reports/test_summary.json`)
+## Guarantees backed by tests (`make test`: 114 passing, see `reports/test_summary.json`)
 
 - The causal mask is enforced: changing future tokens never changes earlier logits. A mask-less model fails the same test.
 - The analytic parameter count equals the real one. The fused and explicit attention paths agree.
@@ -113,6 +159,9 @@ Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, 
 - Checkpoint save → load gives identical logits. A one-bit corruption is rejected. Resume equals uninterrupted training bit-for-bit on CPU.
 - Divergence is detected rather than crashing. Early stopping and cancellation work.
 - Generation is deterministic under a seed. API responses equal the files on disk. Model-artifact exports validate against the schema.
+- KV-cached decoding gives the same logits as full recomputation (1e-5, CPU), including after the window slides.
+- `/v1/completions` echo logprobs equal a direct forward pass; streaming equals non-streaming; the API refuses non-loopback hosts.
+- Hub export: `save_pretrained` → `from_pretrained` gives bit-identical logits, with no network access.
 
 ## Read-only contract (for other local apps)
 
@@ -150,6 +199,10 @@ Constellation reads it for the Morrowglass world (`./scripts/demo.sh` is what it
   - [Dataset card](docs/DATASET_CARD.md)
   - [Model card](docs/MODEL_CARD.md)
   - [Experiment protocol](docs/EXPERIMENT_PROTOCOL.md)
+- Serving and readiness:
+  - [AI Engineer readiness](docs/AI_ENGINEER_READINESS.md)
+  - [Serving](docs/SERVING.md)
+  - [Serving results](docs/SERVING_RESULTS.md) (generated)
 - Results:
   - [Results](docs/RESULTS.md) (generated)
   - [Experiment report](docs/EXPERIMENT_REPORT.md) (generated)

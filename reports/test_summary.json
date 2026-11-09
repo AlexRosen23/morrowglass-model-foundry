@@ -1,11 +1,11 @@
 {
-  "total": 89,
-  "passed": 89,
+  "total": 114,
+  "passed": 114,
   "failed": 0,
   "errors": 0,
   "skipped": 0,
   "command": "make test",
-  "commit": "63a7704b859be2cf1e815ca996147d7f77c0a52e",
-  "time": "2026-11-09T05:57:11+00:00",
+  "commit": "2612504f12361e34b216658862971f84dbf024a8",
+  "time": "2026-11-09T19:22:36+00:00",
   "platform": "darwin"
 }

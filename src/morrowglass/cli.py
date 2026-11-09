@@ -89,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     le.add_argument("--limit", type=int, default=None, help="docs per task; plumbing check only (artifacts/)")
     le.add_argument("--port", type=int, default=5102)
     le.add_argument("--summarize-only", action="store_true")
+    sub.add_parser("serving-report", help="docs/SERVING_RESULTS.md from the saved serving/eval records")
     sub.add_parser("ledger")
     sub.add_parser("report")
     sv = sub.add_parser("serve")
@@ -208,6 +209,10 @@ def main(argv: list[str] | None = None) -> int:
         if not args.limit:
             s = summarize()
             _print({k: s[k] for k in ("checks", "verdict", "missing")})
+    elif args.cmd == "serving-report":
+        from morrowglass.serving.report import build_serving_report
+
+        print(build_serving_report())
     elif args.cmd == "ledger":
         from morrowglass.api.store import Store
 

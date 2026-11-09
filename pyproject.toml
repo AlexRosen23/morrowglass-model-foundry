@@ -56,6 +56,7 @@ ignore = ["RUF001", "RUF002", "RUF003", "E741"]
 "src/morrowglass/experiments/*.py" = ["E501", "RUF005"]
 "src/morrowglass/contracts.py" = ["E501"]
 "src/morrowglass/hub.py" = ["E501"]  # builds a Markdown model card
+"src/morrowglass/serving/report.py" = ["E501"]
 "tests/*.py" = ["E501"]
 
 [tool.mypy]

@@ -1,0 +1,141 @@
+{
+  "analysis_git": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+  "analyzed": "2026-11-09T05:00:36+00:00",
+  "arms": [
+    "digitsum-plain-98e90485-s0",
+    "digitsum-posaug-45ea90a4-s0",
+    "digitsum-plain-4311223f-s1",
+    "digitsum-posaug-1551a6ac-s1"
+  ],
+  "caveats": [
+    "Chance accuracy is 10%.",
+    "Synthetic success is not evidence of general reasoning."
+  ],
+  "criterion": "Plain arm: val_iid acc > 0.95 and test_ood_far acc < 0.5. Pos-aug arm: OOD accuracy higher than plain arm for both seeds.",
+  "experiment": "digitsum",
+  "hypothesis": "A 2-layer model learns the rule in-distribution (3-6 terms, > 95% val accuracy) but fails to transfer to longer inputs (8-10 and 12-16 terms); random position offsets during training reduce but do not remove the gap.",
+  "missing_runs": [],
+  "observations": {
+    "accuracy": {
+      "digitsum-plain-s0": {
+        "test_ood_far_acc": null,
+        "test_ood_near_acc": null,
+        "train_acc": 0.10113333333333334,
+        "val_iid_acc": 0.1105
+      },
+      "digitsum-plain-s1": {
+        "test_ood_far_acc": null,
+        "test_ood_near_acc": null,
+        "train_acc": 0.1016,
+        "val_iid_acc": 0.111
+      },
+      "digitsum-posaug-s0": {
+        "test_ood_far_acc": null,
+        "test_ood_near_acc": null,
+        "train_acc": 0.10163333333333334,
+        "val_iid_acc": 0.1085
+      },
+      "digitsum-posaug-s1": {
+        "test_ood_far_acc": null,
+        "test_ood_near_acc": null,
+        "train_acc": 0.10156666666666667,
+        "val_iid_acc": 0.1105
+      }
+    }
+  },
+  "plots": [
+    "val_iid.png"
+  ],
+  "profile": "standard",
+  "researcher_note": null,
+  "table": [
+    {
+      "best_step": 2900,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.303013324737549,
+      "params": 432768,
+      "run_id": "digitsum-plain-98e90485-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 18432000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 175.1
+    },
+    {
+      "best_step": 2400,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.302016258239746,
+      "params": 432768,
+      "run_id": "digitsum-posaug-45ea90a4-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 18432000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 195.9
+    },
+    {
+      "best_step": 3000,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.304649591445923,
+      "params": 432768,
+      "run_id": "digitsum-plain-4311223f-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 18432000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 66.5
+    },
+    {
+      "best_step": 100,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.3062527179718018,
+      "params": 432768,
+      "run_id": "digitsum-posaug-1551a6ac-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 18432000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 85.4
+    }
+  ],
+  "title": "Algorithmic transfer: digit-sum mod 10 under length shift",
+  "track": "algorithmic",
+  "verdict": "pending",
+  "verdict_detail": "OOD splits are locked; run `morrowglass final-test` on these runs"
+}

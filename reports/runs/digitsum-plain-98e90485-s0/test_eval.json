@@ -1,0 +1,20 @@
+{
+  "checkpoint": "best (selected on validation)",
+  "evaluated": "2026-11-09T05:02:26+00:00",
+  "reason": "Final evaluation after all standard-profile selection on validation: pre-registered flagship (scratch), best-on-validation LM (bpe1024-small), capacity winner (byte-medium), val-chosen baseline (KN-4 BPE), and the pre-registered OOD splits of the plain digit-sum runs. No further tuning of these runs follows.",
+  "results": {
+    "test_ood_far": {
+      "accuracy": 0.094,
+      "error": 0.906,
+      "loss": 2.3033756103515626,
+      "n": 2000
+    },
+    "test_ood_near": {
+      "accuracy": 0.0965,
+      "error": 0.9035,
+      "loss": 2.3028944702148437,
+      "n": 2000
+    }
+  },
+  "run_id": "digitsum-plain-98e90485-s0"
+}

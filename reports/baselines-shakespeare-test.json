@@ -1,0 +1,20 @@
+{
+  "evaluated": "2026-11-09T05:13:47+00:00",
+  "model": {
+    "model": "kneser-ney-4",
+    "order": 4,
+    "tokenizer": "bpe1024"
+  },
+  "reason": "Pre-registered OOD evaluation of the digitsum-scratchpad follow-up; all four runs were selected on val_iid only (each reached 0 error). No further changes to these runs follow.",
+  "test": {
+    "bits_per_byte": 2.191377295146292,
+    "bits_per_byte_ci95": [
+      2.175561683243917,
+      2.2063144079458343
+    ],
+    "bytes_predicted": 377276,
+    "loss_nats_per_token": 3.546857664435942,
+    "perplexity_per_token": 34.704094060163264,
+    "tokens_predicted": 161569
+  }
+}

@@ -196,6 +196,21 @@ def build(name: str, profile: str = "standard") -> Experiment:
             ["The usual windowed val metric is itself leaky for a non-causal model; analysis uses "
              "last-position-only scoring, which cannot see the future for either model."],
         )
+    if name == "break-mask-long":
+        steps = {"smoke": 30, "standard": 2000, "extended": 4000}[p]
+        common = dict(max_steps=steps, eval_interval=max(10, steps // 20), checkpoint_interval=steps)
+        tiny_nc = {**MODEL_SIZES["nano" if p == "smoke" else "tiny"], "causal": False}
+        return Experiment(
+            name, "Break the Model, follow-up: no causal mask for 2,000 steps",
+            "Registered 2026-11-08 AFTER break-mask (400 steps) showed no collapse. Given 5x more steps, the "
+            "mask-less model finds the copy-from-the-future shortcut: its training loss falls well below the "
+            "causal model's, while leak-free last-position bpb is worse than the causal model's.",
+            "Non-causal train loss < causal train loss AND non-causal leak-free bpb > causal leak-free bpb.",
+            [_lm("break-mask-long-noncausal", name, "tiny", p, model=tiny_nc, **common),
+             _lm("break-mask-long-causal", name, "tiny", p, **common)],
+            ["Follow-up designed after seeing break-mask; that result is kept and reported.",
+             "Leak-free scoring uses only the final position of each window."],
+        )
     if name == "break-overfit":
         steps = {"smoke": 40, "standard": 1500, "extended": 3000}[p]
         return Experiment(
@@ -215,4 +230,4 @@ def build(name: str, profile: str = "standard") -> Experiment:
 
 
 ALL = ["scratch", "tokenization", "capacity", "optimization", "digitsum", "digitsum-scratchpad", "break-lr",
-       "break-mask", "break-overfit"]
+       "break-mask", "break-mask-long", "break-overfit"]

@@ -343,7 +343,7 @@ const VERDICT_CLASS: Record<string, string> = { supported: "ok", "partially supp
 
 export function FindingsPanel({ experiments, dataset, onShowRuns }: { experiments: Experiment[]; dataset: any; onShowRuns: (ids: string[]) => void }) {
   const [open, setOpen] = useState<string | null>(null);
-  const exps = experiments.filter((e) => !e.experiment.startsWith("break-"));
+  const exps = experiments.filter((e) => !e.experiment.startsWith("break-") && !e.experiment.startsWith("digitsum"));
   return (
     <div className="findings">
       <p className="dim">Each experiment was registered (hypothesis + success criterion) in <code>experiments/registry.py</code> before it ran; verdicts are computed by <code>experiments/analyze.py</code> from saved run records.</p>
@@ -393,7 +393,7 @@ function FindingCard({ e, open, onOpen, dataset, onShowRuns }: { e: Experiment; 
 // ------------------------------------------------------------------ break the model / what failed
 
 export function BreakPanel({ experiments, onShowRuns }: { experiments: Experiment[]; onShowRuns: (ids: string[]) => void }) {
-  const cases = experiments.filter((e) => e.experiment.startsWith("break-") || e.experiment === "digitsum");
+  const cases = experiments.filter((e) => e.experiment.startsWith("break-") || e.experiment.startsWith("digitsum"));
   return (
     <div className="break">
       <p className="dim">Controlled failures with fixed seeds. Each row follows <b>problem → hypothesis → experiment → result → decision</b>, read from the saved records.</p>
@@ -420,14 +420,18 @@ export function BreakPanel({ experiments, onShowRuns }: { experiments: Experimen
 const WHAT_FAILED: Record<string, string> = {
   "break-lr": "Learning rate set ~30x too high (0.1), with no warmup and no gradient clipping.",
   "break-mask": "The causal mask is removed, so each position can attend to future tokens during training.",
+  "break-mask-long": "Same as break-mask, but trained 5x longer to see whether the model finds the future-token shortcut.",
   "break-overfit": "A 4.8M-parameter model is trained on only 240 KB of text with no regularisation.",
   digitsum: "A model trained on 3-6-term sums is asked to sum 8-16 terms (unseen lengths and positions).",
+  "digitsum-scratchpad": "With a running-sum scratchpad the rule is learnable; does it transfer to 8-16 terms at unseen positions?",
 };
 const WHAT_CHANGED: Record<string, string> = {
   "break-lr": "Keep warmup + clipping as defaults, and select the learning rate with the optimisation experiment.",
   "break-mask": "Keep the causal mask; the leakage unit test (tests/test_model.py) now guards it in CI.",
+  "break-mask-long": "Keep the mask and the leakage unit test; judge non-causal models only with leak-free scoring.",
   "break-overfit": "Use dropout + early stopping on scarce data; report best-on-validation checkpoints.",
-  digitsum: "Report length generalisation as a separate, locked OOD test; position augmentation is the attempted fix.",
+  digitsum: "The plain format never left chance (parity-like plateau); switched to a running-sum scratchpad follow-up.",
+  "digitsum-scratchpad": "Random position offsets in training; measured per seed on the locked OOD splits.",
 };
 
 export function JobPanel({ onDone }: { onDone: () => void }) {

@@ -264,8 +264,8 @@ def analyze(name: str, profile: str = "standard") -> dict[str, Any]:
         verdict = "supported" if broken_bad and fixed else "not supported"
         detail = (f"broken: {obs['broken']['status']}, best bpb {b_best}; fix1 best {obs['fix1_warmup_clip']['best_val_bpb']}; "
                   f"fix2 best {f2_best}")
-    elif name == "break-mask":
-        nc, c = by_name["break-mask-noncausal"], by_name["break-mask-causal"]
+    elif name in ("break-mask", "break-mask-long"):
+        nc, c = by_name[f"{name}-noncausal"], by_name[f"{name}-causal"]
         ckroot = CHECKPOINT_ROOT if profile != "smoke" else SMOKE_DIR / "checkpoints"
         lf_nc = last_position_bpb(runs_dir / nc["summary"]["run_id"], ckroot)
         lf_c = last_position_bpb(runs_dir / c["summary"]["run_id"], ckroot)

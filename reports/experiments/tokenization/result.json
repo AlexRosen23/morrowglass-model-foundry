@@ -1,6 +1,6 @@
 {
-  "analysis_git": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
-  "analyzed": "2026-11-09T04:32:12+00:00",
+  "analysis_git": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+  "analyzed": "2026-11-09T05:00:18+00:00",
   "arms": [
     "lm-byte-small-2822813d-s0",
     "lm-bpe1024-small-eb29b8fb-s0"

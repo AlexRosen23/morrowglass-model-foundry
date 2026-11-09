@@ -1,0 +1,83 @@
+{
+  "analysis_git": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+  "analyzed": "2026-11-09T05:00:47+00:00",
+  "arms": [
+    "break-mask-noncausal-5422370f-s0",
+    "break-mask-causal-25bac1ba-s0"
+  ],
+  "caveats": [
+    "The usual windowed val metric is itself leaky for a non-causal model; analysis uses last-position-only scoring, which cannot see the future for either model."
+  ],
+  "criterion": "Non-causal train loss < causal train loss AND non-causal leak-free bpb > causal leak-free bpb.",
+  "experiment": "break-mask",
+  "hypothesis": "Without the mask the training loss collapses (the model reads the answer from the future), but on leak-free last-position scoring it is far worse than the causal model.",
+  "missing_runs": [],
+  "observations": {
+    "causal_last_train_loss": 2.3858420848846436,
+    "causal_leak_free_bpb": 3.5706421844289613,
+    "causal_windowed_val_bpb": 3.4030673197660364,
+    "leak_free_positions": 2048,
+    "noncausal_last_train_loss": 2.4413082599639893,
+    "noncausal_leak_free_bpb": 3.5928530988529523,
+    "noncausal_windowed_val_bpb_leaky": 3.476507508197862
+  },
+  "plots": [
+    "train_loss.png"
+  ],
+  "profile": "standard",
+  "researcher_note": null,
+  "table": [
+    {
+      "best_step": 400,
+      "device": "mps",
+      "ece": 0.0033782854101726224,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.4413082599639893,
+      "params": 270816,
+      "run_id": "break-mask-noncausal-5422370f-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 400,
+      "tokenizer": "byte",
+      "tokens_seen": 3276800,
+      "train_subset_bpb": 3.505189939654179,
+      "val_bpb": 3.476507508197862,
+      "val_bpb_ci95": [
+        3.4691853183424928,
+        3.4837605721993756
+      ],
+      "val_loss": 2.409731377502829,
+      "val_ppl_token": 11.130970714285585,
+      "wall_time_s": 16.6
+    },
+    {
+      "best_step": 400,
+      "device": "mps",
+      "ece": 0.011342902854952246,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 2.3858420848846436,
+      "params": 270816,
+      "run_id": "break-mask-causal-25bac1ba-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 400,
+      "tokenizer": "byte",
+      "tokens_seen": 3276800,
+      "train_subset_bpb": 3.431722455993928,
+      "val_bpb": 3.4030673197660364,
+      "val_bpb_ci95": [
+        3.3953809922469462,
+        3.410263994367578
+      ],
+      "val_loss": 2.358826517951518,
+      "val_ppl_token": 10.578530450364855,
+      "wall_time_s": 15.1
+    }
+  ],
+  "title": "Break the Model: remove the causal mask",
+  "track": "language-model",
+  "verdict": "not supported",
+  "verdict_detail": "train loss non-causal 2.441 vs causal 2.386; leak-free bpb 3.593 vs 3.571"
+}

@@ -1,0 +1,22 @@
+{
+  "checkpoint": "best (selected on validation)",
+  "evaluated": "2026-11-09T05:12:56+00:00",
+  "reason": "Pre-registered OOD evaluation of the digitsum-scratchpad follow-up; all four runs were selected on val_iid only (each reached 0 error). No further changes to these runs follow.",
+  "results": {
+    "test_ood_far": {
+      "accuracy": 0.105,
+      "error": 0.895,
+      "loss": null,
+      "n": 2000,
+      "step_accuracy": 0.6014830204900415
+    },
+    "test_ood_near": {
+      "accuracy": 0.346,
+      "error": 0.654,
+      "loss": null,
+      "n": 2000,
+      "step_accuracy": 0.8590749707797629
+    }
+  },
+  "run_id": "digitsum-sp-posaug-8fe76e50-s0"
+}

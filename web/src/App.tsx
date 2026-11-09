@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type Experiment, type RunRow } from "./api";
-import { AttentionPanel, BlueprintPanel, BreakPanel, EvidencePanel, FindingsPanel, GeneratePanel, JobPanel, LedgerPanel, ProvBadge } from "./panels";
+import { AttentionPanel, BlueprintPanel, BreakPanel, EvidencePanel, FindingsPanel, GeneratePanel, JobPanel, LedgerPanel, ProvBadge, ServingPanel } from "./panels";
 
-const TABS = ["Evidence", "Findings", "Break the Model", "Generate", "Attention", "Jobs"] as const;
+const TABS = ["Evidence", "Findings", "Break the Model", "Generate", "Attention", "Serving", "Jobs"] as const;
 type Tab = (typeof TABS)[number];
 type Pane = "blueprint" | "center" | "ledger";
 
@@ -68,7 +68,7 @@ export default function App() {
       else if (e.key === "t") cycleTheme();
       else if (e.key === "?") setHelp((h) => !h);
       else if (e.key === "Escape") setHelp(false);
-      else if (/^[1-6]$/.test(e.key)) setTab(TABS[+e.key - 1]);
+      else if (/^[1-7]$/.test(e.key)) setTab(TABS[+e.key - 1]);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -117,6 +117,7 @@ export default function App() {
             {tab === "Break the Model" && <BreakPanel experiments={experiments} onShowRuns={showRuns} />}
             {tab === "Generate" && <GeneratePanel runs={runs} initial={selected} />}
             {tab === "Attention" && <AttentionPanel runs={runs} initial={selected} layer={layer} setLayer={setLayer} />}
+            {tab === "Serving" && <ServingPanel runs={runs} initial={selected} />}
             {tab === "Jobs" && <JobPanel onDone={load} />}
           </div>
         </section>
@@ -135,7 +136,7 @@ export default function App() {
               <tr><td>Enter</td><td>select run (blueprint + details)</td></tr>
               <tr><td>Space</td><td>add / remove run from the curve overlay</td></tr>
               <tr><td>c</td><td>clear overlay</td></tr>
-              <tr><td>1-6</td><td>switch tab</td></tr>
+              <tr><td>1-7</td><td>switch tab</td></tr>
               <tr><td>t</td><td>theme (auto / dark / light)</td></tr>
               <tr><td>?</td><td>this help</td></tr>
             </tbody></table>

@@ -12,9 +12,12 @@
     morrowglass bench-kv RUN_ID            # KV cache on/off: equivalence + decode speed (registered study)
     morrowglass generate RUN_ID "prompt"   # sample from a checkpoint
     morrowglass export-artifact RUN_ID     # contracts/model_artifact_v1 manifest
+    morrowglass export-hf RUN_ID           # Hugging Face Hub-compatible folder (local save only)
+    morrowglass lm-eval [--models A,B]     # lm-evaluation-harness through /v1/completions
+    morrowglass quant-int8 RUN_ID          # dynamic int8 on CPU: val bpb + decode speed
     morrowglass lora [--approved]          # optional LoRA track (blocked without approval)
     morrowglass ledger                     # rebuild the SQLite index of runs
-    morrowglass serve [--port 5100]        # API for the web UI
+    morrowglass serve [--port 5100] [--model RUN_ID]  # workbench API + OpenAI-compatible /v1 (loopback only)
 """
 
 from __future__ import annotations
@@ -73,10 +76,19 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--seed", type=int, default=0)
     ex = sub.add_parser("export-artifact")
     ex.add_argument("run_id")
+    qi = sub.add_parser("quant-int8", help="dynamic int8 on CPU vs fp32 (EVALUATIONS['int8-dynamic'])")
+    qi.add_argument("run_id")
+    eh = sub.add_parser("export-hf", help="Hub-compatible folder (safetensors + config + model card); local only")
+    eh.add_argument("run_id")
     lo = sub.add_parser("lora", help="optional pretrained + LoRA track (needs --approved: model download)")
     lo.add_argument("--model", default="distilgpt2")
     lo.add_argument("--steps", type=int, default=300)
     lo.add_argument("--approved", action="store_true")
+    le = sub.add_parser("lm-eval", help="lm-evaluation-harness via /v1/completions (EVALUATIONS['lm-eval-harness'])")
+    le.add_argument("--models", default=None, help="comma list (default: every registered model)")
+    le.add_argument("--limit", type=int, default=None, help="docs per task; plumbing check only (artifacts/)")
+    le.add_argument("--port", type=int, default=5102)
+    le.add_argument("--summarize-only", action="store_true")
     sub.add_parser("ledger")
     sub.add_parser("report")
     sv = sub.add_parser("serve")
@@ -163,6 +175,19 @@ def main(argv: list[str] | None = None) -> int:
         from morrowglass.contracts import export_artifact
 
         _print(export_artifact(args.run_id))
+    elif args.cmd == "quant-int8":
+        from morrowglass.inference.quant import bench_int8
+
+        r = bench_int8(args.run_id)
+        _print({k: r[k] for k in ("run_id", "fp32", "int8", "delta_val_bpb", "speedup_tokens_per_s", "checks",
+                                  "verdict")})
+    elif args.cmd == "export-hf":
+        from morrowglass.hub import export_hf
+
+        info = export_hf(args.run_id)
+        _print({k: info[k] for k in ("run_id", "files", "roundtrip_max_abs_logit_diff",
+                                     "publish_command_after_owner_approval")})
+        print("NOT published. Publishing needs the owner's approval; the command above is what they would run.")
     elif args.cmd == "lora":
         from morrowglass.finetune.lora import run_lora
 
@@ -171,6 +196,18 @@ def main(argv: list[str] | None = None) -> int:
         except PermissionError as e:
             print(f"BLOCKED: {e}", file=sys.stderr)
             return 3
+    elif args.cmd == "lm-eval":
+        from morrowglass.experiments.registry import EVALUATIONS
+        from morrowglass.serving.harness import run_model, summarize
+
+        if not args.summarize_only:
+            models = args.models.split(",") if args.models else list(EVALUATIONS["lm-eval-harness"].runs)
+            for model_id in models:
+                print(f"{model_id}: running lm-eval through 127.0.0.1:{args.port} ...", flush=True)
+                _print(run_model(model_id, args.port, args.limit))
+        if not args.limit:
+            s = summarize()
+            _print({k: s[k] for k in ("checks", "verdict", "missing")})
     elif args.cmd == "ledger":
         from morrowglass.api.store import Store
 

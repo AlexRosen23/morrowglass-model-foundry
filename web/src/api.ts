@@ -74,7 +74,7 @@ async function j<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, init);
   if (!r.ok) {
     let msg = `${r.status} ${r.statusText}`;
-    try { msg = (await r.json()).detail ?? msg; } catch { /* not json */ }
+    try { const b = await r.json(); msg = b.detail ?? b.error?.message ?? msg; } catch { /* not json */ }
     throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
   }
   return r.json() as Promise<T>;
@@ -95,6 +95,8 @@ export const api = {
   dataset: () => j<{ manifest: any; source: string }>("/api/dataset"),
   testLog: () => j<{ entries: any[]; source: string }>("/api/test-log"),
   hardware: () => j<Record<string, any>>("/api/hardware"),
+  serving: () => j<any>("/api/serving"),
+  completion: (b: Record<string, unknown>) => j<any>("/v1/completions", post(b)),
   generate: (b: { run_id: string; prompt: string; max_new_tokens: number; temperature: number; top_k: number | null; seed: number; with_baseline: boolean }) =>
     j<GenResult>("/api/generate", post(b)),
   baselineGenerate: (b: { run_id: string; prompt: string; max_new_tokens: number; temperature: number; top_k: number | null; seed: number }) =>

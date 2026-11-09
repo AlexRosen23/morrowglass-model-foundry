@@ -462,3 +462,100 @@ export function JobPanel({ onDone }: { onDone: () => void }) {
     </div>
   );
 }
+
+// ------------------------------------------------------------------ serving (KV cache, int8, harness, OpenAI-compatible API)
+
+function Verdict({ v }: { v: string }) {
+  return <span className={`verdict v-${VERDICT_CLASS[v] ?? "mid"}`}>{v}</span>;
+}
+
+export function ServingPanel({ runs, initial }: { runs: RunRow[]; initial: string | null }) {
+  const [s, setS] = useState<any>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { api.serving().then(setS).catch((e) => setErr(String(e.message))); }, []);
+  if (err) return <div className="error">{err}</div>;
+  if (!s) return <div className="empty">Loading serving records…</div>;
+  const kv = Object.values(s.kv_cache ?? {}) as any[];
+  const q = Object.values(s.int8 ?? {}) as any[];
+  const le = s.lm_eval;
+  return (
+    <div className="serving">
+      <p className="dim">Serving studies were registered (hypothesis + criterion) in <code>experiments/registry.py</code> before they ran, on existing checkpoints and validation text only. Shared machine: speeds are indicative.</p>
+      {kv.map((k) => (
+        <section className="card" key={k.run_id}>
+          <h3>KV cache: decode speed <ProvBadge p="measured" /> <Verdict v={k.verdict} /> <span className="dim small">{k.run_id}</span></h3>
+          <table className="tbl mono"><thead><tr><th>device</th><th>prompt</th><th>no cache</th><th>KV cache</th><th>speed-up</th><th>decode ms/token (cache)</th></tr></thead>
+            <tbody>{(["cpu", "mps"] as const).flatMap((d) => k.protocol.prompt_tokens.map((L: number) => {
+              const off = k.rows.find((r: any) => r.device === d && r.prompt_tokens === L && !r.kv_cache);
+              const on = k.rows.find((r: any) => r.device === d && r.prompt_tokens === L && r.kv_cache);
+              if (!on || !off) return null;
+              return <tr key={`${d}${L}`}><td>{d}</td><td>{L} tok</td><td>{off.tokens_per_s} tok/s</td><td>{on.tokens_per_s} tok/s</td>
+                <td>{fmt.n(on.tokens_per_s / off.tokens_per_s, 2)}x</td><td>{on.decode_ms_per_token}</td></tr>;
+            }))}</tbody></table>
+          <p className="dim small">Equivalence on CPU: same greedy tokens {String(k.checks.same_tokens)}, max |Δlogit| {Math.max(...k.equivalence_cpu.map((e: any) => e.max_abs_logit_diff)).toExponential(1)}. Batch 1, greedy, {k.protocol.new_tokens} new tokens, {k.threads} threads, median of {k.protocol.repeats}.</p>
+          <Source path={`reports/serving/kv-cache/${k.run_id}.json`} />
+        </section>
+      ))}
+      {q.length > 0 && (
+        <section className="card">
+          <h3>Dynamic int8 on CPU: quality vs speed <ProvBadge p="measured" /></h3>
+          <table className="tbl mono"><thead><tr><th>run</th><th>val bpb fp32 → int8</th><th>Δ</th><th>decode tok/s fp32 → int8</th><th>weights MB</th><th>verdict</th></tr></thead>
+            <tbody>{q.map((r) => (
+              <tr key={r.run_id}><td>{r.run_id}</td><td>{fmt.n(r.fp32.val_bpb, 4)} → {fmt.n(r.int8.val_bpb, 4)}</td><td>{r.delta_val_bpb >= 0 ? "+" : ""}{fmt.n(r.delta_val_bpb, 4)}</td>
+                <td>{r.fp32.tokens_per_s} → {r.int8.tokens_per_s}</td><td>{r.fp32.weights_mb} → {r.int8.weights_mb}</td><td><Verdict v={r.verdict} /></td></tr>
+            ))}</tbody></table>
+          <Source path="reports/serving/int8/*.json" />
+        </section>
+      )}
+      {le && (
+        <section className="card">
+          <h3>lm-evaluation-harness through <code>/v1/completions</code> <ProvBadge p="measured" /> <Verdict v={le.verdict} /></h3>
+          <table className="tbl mono"><thead><tr><th>model</th><th>lambada acc</th><th>wikitext bits/byte</th><th>Shakespeare val bpb: harness / own</th></tr></thead>
+            <tbody>{Object.entries(le.models).map(([m, r]: [string, any]) => (
+              <tr key={m}><td>{m}</td><td>{fmt.n(r.lambada_acc, 4)}</td><td>{fmt.n(r.wikitext_bits_per_byte, 3)}</td>
+                <td>{fmt.n(r.shakespeare_val_bits_per_byte, 3)}{r.own_val_bpb !== undefined ? ` / ${fmt.n(r.own_val_bpb, 3)}` : ""}</td></tr>
+            ))}</tbody></table>
+          <p className="dim small">Expected to be weak on general English: about 2M parameters, Shakespeare only, 256 tokens of context. The Shakespeare row checks the plumbing: the harness, through the API, should reproduce the project's own validation number.</p>
+          <Source path="reports/lm_eval/summary.json" />
+        </section>
+      )}
+      <OpenAITry runs={runs} initial={initial} />
+    </div>
+  );
+}
+
+function OpenAITry({ runs, initial }: { runs: RunRow[]; initial: string | null }) {
+  const lmRuns = runs.filter((r) => r.has_checkpoint && r.task === "lm");
+  const [runId, setRunId] = useState(initial && lmRuns.some((r) => r.run_id === initial) ? initial : lmRuns[0]?.run_id ?? "");
+  const [prompt, setPrompt] = useState("HAMLET.\n");
+  const [res, setRes] = useState<{ body: any; ms: number } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const body = { model: runId, prompt, max_tokens: 80, temperature: 0.8, seed: 0, stop: ["\n\n"] };
+  const go = () => {
+    setBusy(true); setErr(null);
+    const t = performance.now();
+    api.completion(body).then((b) => setRes({ body: b, ms: performance.now() - t })).catch((e) => setErr(String(e.message))).finally(() => setBusy(false));
+  };
+  if (!lmRuns.length) return null;
+  return (
+    <section className="card">
+      <h3>OpenAI-compatible API <ProvBadge p="live" /></h3>
+      <div className="formrow">
+        <label>model<select value={runId} onChange={(e) => setRunId(e.target.value)}>
+          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{r.run_id}</option>)}
+        </select></label>
+        <input value={prompt} onChange={(e) => setPrompt(e.target.value)} aria-label="completion prompt" maxLength={500} />
+        <button className="primary" onClick={go} disabled={busy || !runId}>{busy ? "Calling…" : "POST /v1/completions"}</button>
+      </div>
+      <pre className="gen mono small">{`curl -s 127.0.0.1:5100/v1/completions -H 'Content-Type: application/json' -d '${JSON.stringify(body).replace(/'/g, "'\\''")}'`}</pre>
+      {err && <div className="error">{err}</div>}
+      {res && (
+        <>
+          <pre className="gen"><span className="dim">{prompt}</span>{res.body.choices?.[0]?.text}</pre>
+          <p className="dim small">finish_reason {res.body.choices?.[0]?.finish_reason} · {res.body.usage?.completion_tokens} tokens · {Math.round(res.ms)} ms round trip (browser-measured) · KV cache {String(res.body.morrowglass?.kv_cache)} · not instruction-tuned: this is a continuation, not an answer.</p>
+        </>
+      )}
+    </section>
+  );
+}

@@ -230,6 +230,30 @@ def test_log() -> dict[str, Any]:
     return {"entries": store.test_log(), "source": "reports/test_access_log.jsonl"}
 
 
+@app.get("/api/serving")
+def serving() -> dict[str, Any]:
+    """Measured serving/eval studies (registered in experiments/registry.py EVALUATIONS), straight from disk."""
+    from morrowglass.experiments.registry import EVALUATIONS
+    from morrowglass.repro import read_json
+
+    rep = REPO_ROOT / "reports"
+
+    def folder(sub: str) -> dict[str, Any]:
+        d = rep / sub
+        return {p.stem: read_json(p) for p in sorted(d.glob("*.json"))} if d.exists() else {}
+
+    le = rep / "lm_eval" / "summary.json"
+    hf = {p.parent.name: read_json(p) for p in sorted((rep / "hf_export").glob("*/morrowglass.json"))}
+    return {
+        "registered": {k: {"title": v.title, "hypothesis": v.hypothesis, "criterion": v.criterion,
+                           "registered": v.registered} for k, v in EVALUATIONS.items()},
+        "kv_cache": folder("serving/kv-cache"), "int8": folder("serving/int8"),
+        "lm_eval": read_json(le) if le.exists() else None, "hf_export": hf,
+        "sources": ["reports/serving/kv-cache/*.json", "reports/serving/int8/*.json", "reports/lm_eval/summary.json",
+                    "reports/hf_export/*/morrowglass.json"],
+    }
+
+
 @app.get("/api/report", response_class=PlainTextResponse)
 def report() -> str:
     p = REPO_ROOT / "docs" / "EXPERIMENT_REPORT.md"

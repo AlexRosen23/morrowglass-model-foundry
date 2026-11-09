@@ -170,8 +170,10 @@ def _split_prompts(prompt: str | list[str] | list[int] | list[list[int]]) -> lis
 class _Gen:
     """One sampled continuation: token ids, raw logprob rows, text, finish reason."""
 
-    def __init__(self, backend: Backend, ids: list[int], max_tokens: int, req: _Sampling, stops: list[str]) -> None:
+    def __init__(self, backend: Backend, ids: list[int], max_tokens: int, req: _Sampling, stops: list[str],
+                 first_logprobs: torch.Tensor | None = None) -> None:
         self.backend, self.ids, self.max_tokens, self.req, self.stops = backend, ids, max_tokens, req, stops
+        self.first = first_logprobs  # last row of an echo scoring pass: saves a second prompt forward
         self.out: list[int] = []
         self.rows: list[torch.Tensor] = []
         self.finish = "length"
@@ -182,8 +184,9 @@ class _Gen:
         gen = torch.Generator().manual_seed(req.seed if req.seed is not None else 0)
         stepper = b.stepper()
         seq = list(self.ids) or b.encode("\n")
-        for _ in range(self.max_tokens):
-            logits = stepper.next_logits(seq).float().cpu()
+        for step in range(self.max_tokens):
+            # log-softmax only shifts logits by a constant, so sampling from it is the same distribution
+            logits = self.first if (step == 0 and self.first is not None) else stepper.next_logits(seq).float().cpu()
             p = _sample_probs(logits, req.temperature, req.top_k, req.top_p)
             nxt = int(torch.multinomial(p, 1, generator=gen)) if req.temperature > 0 else int(p.argmax())
             self.rows.append(torch.log_softmax(logits, -1))
@@ -215,10 +218,10 @@ def complete_one(backend: Backend, prompt: str | list[int], req: CompletionReque
     if not ids and (req.echo or max_tokens == 0):
         raise APIError(400, "empty prompt", "prompt")
     with backend.lock:
-        g = _Gen(backend, ids, max_tokens, req, stops)
+        prompt_rows = backend.logprobs(ids) if (req.echo and want_lp) else None
+        g = _Gen(backend, ids, max_tokens, req, stops, None if prompt_rows is None else prompt_rows[-1])
         for _ in g.tokens():
             pass
-        prompt_rows = backend.logprobs(ids) if (req.echo and want_lp) else None
     gen_ids, gen_rows = g.out, g.rows
     text = backend.decode(gen_ids)
     if g.finish == "stop":

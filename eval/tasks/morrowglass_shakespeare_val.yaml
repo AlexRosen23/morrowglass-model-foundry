@@ -1,0 +1,19 @@
+# Our Shakespeare VALIDATION split (3 held-out plays) as one document, scored by rolling log-likelihood.
+# Plumbing check: the harness's bits_per_byte here should match each run's own val bpb (summary.json).
+# Run from the repository root (data_files is relative). The test split is never referenced.
+task: morrowglass_shakespeare_val
+dataset_path: text
+dataset_kwargs:
+  data_files:
+    validation: data/processed/shakespeare/val.txt
+  sample_by: document
+output_type: loglikelihood_rolling
+validation_split: validation
+doc_to_text: ""
+doc_to_target: "{{text}}"
+metric_list:
+  - metric: word_perplexity
+  - metric: byte_perplexity
+  - metric: bits_per_byte
+metadata:
+  version: 1.0

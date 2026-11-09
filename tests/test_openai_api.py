@@ -192,3 +192,13 @@ def test_hf_reference_is_off_unless_enabled(client: TestClient) -> None:
 def test_serve_refuses_non_loopback_hosts(capsys: pytest.CaptureFixture[str]) -> None:
     assert cli_main(["serve", "--host", "0.0.0.0", "--port", "5109"]) == 2
     assert "loopback-only" in capsys.readouterr().err
+
+
+def test_serving_records_endpoint_matches_files(client: TestClient) -> None:
+    from morrowglass.repro import REPO_ROOT, read_json
+
+    body = client.get("/api/serving").json()
+    assert set(body["registered"]) == {"kv-cache", "lm-eval-harness", "int8-dynamic"}
+    for rid, rec in body["kv_cache"].items():
+        assert rec == read_json(REPO_ROOT / "reports" / "serving" / "kv-cache" / f"{rid}.json")
+        assert rec["provenance"] == "measured" and rec["verdict"] in ("supported", "not supported")

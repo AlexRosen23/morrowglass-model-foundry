@@ -103,7 +103,7 @@ The workbench has three panels:
 
 Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, `space`, `1-6`, `t`, `?`.
 
-## Guarantees backed by tests (`make test`: 87 passing, see `reports/test_summary.json`)
+## Guarantees backed by tests (`make test`: 89 passing, see `reports/test_summary.json`)
 
 - The causal mask is enforced: changing future tokens never changes earlier logits. A mask-less model fails the same test.
 - The analytic parameter count equals the real one. The fused and explicit attention paths agree.
@@ -113,6 +113,20 @@ Badges mark each item as `MEASURED`, `SMOKE` or `LIVE SAMPLE`. Keyboard: `j/k`, 
 - Checkpoint save → load gives identical logits. A one-bit corruption is rejected. Resume equals uninterrupted training bit-for-bit on CPU.
 - Divergence is detected rather than crashing. Early stopping and cancellation work.
 - Generation is deterministic under a seed. API responses equal the files on disk. Model-artifact exports validate against the schema.
+
+## Read-only contract (for other local apps)
+
+The API also answers, at the root and on 127.0.0.1 only:
+
+| route | answer |
+|---|---|
+| `GET /health` | `{ ok, status, project_id: "morrowglass", mode: "recorded", runs, last_run }` |
+| `GET /capabilities` | what it does (`implemented`), what it does not (`not_implemented`, `disabled_by_design`), dataset and mode |
+| `GET /runs?limit=N` | the measured training runs, newest first: `run_id`, `status`, `mode: "recorded"`, times, a headline in its own numbers |
+| `GET /runs/{run_id}` | one run with its summary and config |
+
+Smoke runs are never listed, and nothing in the contract starts or changes anything. The owner's
+Constellation reads it for the Morrowglass world (`./scripts/demo.sh` is what its launcher starts).
 
 ## Hardware and ports
 

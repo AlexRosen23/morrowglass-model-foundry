@@ -9,7 +9,7 @@ use the measurement command instead of a number.
 
 - Built a decoder-only Transformer language model from scratch in PyTorch (1.87M parameters, causal attention, verified checkpointing) and an experiment framework with pre-registered hypotheses, locked test split and bootstrap confidence intervals; on held-out Shakespeare plays, the best-on-validation scratch model reached 2.081 bits/byte on the test set vs 2.191 for a tuned Kneser-Ney n-gram baseline.
 
-- Designed and ran 30+ reproducible PyTorch training runs on Apple-silicon MPS (tokenization, model-capacity, learning-rate and schedule ablations across 3 seeds; controlled failure studies), with every metric traced to a git commit, seed, config hash and dataset hash, and 87 automated tests covering causal masking, checkpoint integrity and data-leakage guards.
+- Designed and ran 30+ reproducible PyTorch training runs on Apple-silicon MPS (tokenization, model-capacity, learning-rate and schedule ablations across 3 seeds; controlled failure studies), with every metric traced to a git commit, seed, config hash and dataset hash, and 89 automated tests covering causal masking, checkpoint integrity and data-leakage guards.
 
 Alternative first bullet using the extended run (verified):
 

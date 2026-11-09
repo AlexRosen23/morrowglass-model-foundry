@@ -2,6 +2,8 @@
 # Build the web UI, then serve the API (5100) and the built UI (5101). Ctrl-C stops both.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Started from a launcher (e.g. the Constellation) the PATH can be minimal: add the user-local uv and node.
+export PATH="$HOME/.local/bin:$HOME/.local/opt/node/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 API_PORT="${API_PORT:-5100}"; WEB_PORT="${WEB_PORT:-5101}"
 for p in "$API_PORT" "$WEB_PORT"; do
   if lsof -nP -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then echo "port $p is busy; set API_PORT/WEB_PORT"; exit 1; fi

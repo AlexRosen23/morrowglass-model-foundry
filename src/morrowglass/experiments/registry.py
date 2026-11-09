@@ -231,3 +231,89 @@ def build(name: str, profile: str = "standard") -> Experiment:
 
 ALL = ["scratch", "tokenization", "capacity", "optimization", "digitsum", "digitsum-scratchpad", "break-lr",
        "break-mask", "break-mask-long", "break-overfit"]
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Serving and evaluation studies on already-trained checkpoints (no training). Each is registered here, with its
+# hypothesis and success criterion, and committed BEFORE its first measurement. The code that measures it computes
+# the verdict from the criterion below; it never reads the test split (validation text only).
+
+FLAGSHIP_RUN = "lm-byte-small-2822813d-s0"  # pre-registered flagship, standard budget
+EXTENDED_RUN = "lm-byte-small-240f8c28-s0"  # same model, extended budget (owner-approved); best scratch val bpb
+BEST_BPE_RUN = "lm-bpe1024-small-eb29b8fb-s0"  # best scratch model on validation at the standard budget
+
+
+@dataclass(frozen=True)
+class Evaluation:
+    name: str
+    title: str
+    registered: str
+    question: str
+    hypothesis: str
+    criterion: str
+    runs: tuple[str, ...]
+    protocol: dict[str, Any]
+    caveats: tuple[str, ...]
+    output: str
+
+
+EVALUATIONS: dict[str, Evaluation] = {
+    "kv-cache": Evaluation(
+        "kv-cache", "KV cache: equivalence and decode speed", "2026-11-09",
+        "Does caching keys/values change what the model computes, and how much faster is autoregressive decoding?",
+        "Cached greedy decoding of a real checkpoint produces the same tokens as uncached decoding with logits "
+        "within 1e-4 on CPU. On CPU, cached decoding has higher tokens/s than uncached at every prompt length, "
+        "and the speed-up at the longest prompt is larger than at the shortest.",
+        "CPU: identical greedy tokens AND max |logit difference| < 1e-4 AND speedup > 1 at every prompt length AND "
+        "speedup(longest) > speedup(shortest). MPS numbers are reported without a criterion.",
+        (FLAGSHIP_RUN, BEST_BPE_RUN),
+        {"devices": ["cpu", "mps"], "prompt_tokens": [16, 64, 192], "new_tokens": 64, "decoding": "greedy",
+         "batch": 1, "repeats": 5, "statistic": "median over repeats", "torch_threads": 2,
+         "prompt_source": "start of the validation split (never test)"},
+        ("Shared machine with other workloads; numbers are indicative, not a controlled benchmark.",
+         "prompt + new tokens stay within block_size (256): beyond it the window slides and every step recomputes "
+         "(the cache cannot be reused with learned absolute positions)."),
+        "reports/serving/kv-cache/<run_id>.json",
+    ),
+    "lm-eval-harness": Evaluation(
+        "lm-eval-harness", "Standard harness (EleutherAI lm-evaluation-harness) through the OpenAI-compatible API",
+        "2026-11-09",
+        "Do standard harness numbers come out of our own /v1/completions endpoint, do they agree with the "
+        "project's own evaluator, and where does a 2M-parameter Shakespeare model sit on general-English tasks?",
+        "(a) Plumbing: for each scratch model, the harness's bits_per_byte on our validation split "
+        "(custom task morrowglass_shakespeare_val) is within 0.03 of that run's own val bpb in summary.json. "
+        "(b) Expected weakness: every scratch model scores lambada_openai accuracy < 0.05 and below distilgpt2, "
+        "and a higher wikitext bits_per_byte than distilgpt2.",
+        "(a) |harness bpb - summary val bpb| < 0.03 for every scratch run. (b) lambada acc < 0.05 and "
+        "< distilgpt2's, wikitext bpb > distilgpt2's, for every scratch run. If distilgpt2 cannot run, (b) is "
+        "judged on the 0.05 bound alone and says so.",
+        (FLAGSHIP_RUN, EXTENDED_RUN, BEST_BPE_RUN, "hf:distilgpt2"),
+        {"harness": "lm-eval==0.4.13 (eval/lm-eval-requirements.txt, fully pinned)",
+         "model_type": "local-completions -> POST /v1/completions on 127.0.0.1 (echo + logprobs)",
+         "tokenizer": "remote (/tokenize, /detokenize, /tokenizer_info served by the same API)",
+         "tasks": {"lambada_openai": "all 5,153 docs", "wikitext": "wikitext-2 document-level test, all 62 docs",
+                   "morrowglass_shakespeare_val": "our validation split as one document (eval/tasks/)"},
+         "max_length": {"scratch": 256, "hf:distilgpt2": 1024}, "batch_size": 1, "num_concurrent": 1,
+         "prefix_token": "newline (the scratch tokenizers have no BOS/EOS)", "fewshot": 0},
+        ("lambada needs the exact last word of an English news/fiction passage; the scratch models saw only "
+         "Shakespeare and, at byte level, 256 bytes of context, so near-zero accuracy is expected.",
+         "distilgpt2 sees 1,024 BPE tokens of context; the scratch byte models see 256 bytes. Not a fair fight, "
+         "and not meant to be: the point is comparable plumbing.",
+         "distilgpt2's pretraining data (OpenWebText) may overlap with Wikipedia-derived and Shakespeare text."),
+        "reports/lm_eval/<model>/ (raw harness output + samples) and reports/lm_eval/summary.json",
+    ),
+    "int8-dynamic": Evaluation(
+        "int8-dynamic", "Dynamic int8 quantization on CPU: quality vs latency", "2026-11-09",
+        "What does post-training dynamic int8 quantization of the Linear layers cost in quality and buy in speed?",
+        "Dynamic int8 (torch.ao quantize_dynamic, qnnpack, nn.Linear only) changes validation bpb by less than "
+        "0.01 and raises cached greedy decode tokens/s on CPU.",
+        "|val bpb(int8) - val bpb(fp32)| < 0.01 AND decode tokens/s(int8) > tokens/s(fp32), per run.",
+        (FLAGSHIP_RUN, BEST_BPE_RUN),
+        {"device": "cpu", "engine": "qnnpack", "modules": "nn.Linear (qkv, proj, mlp, lm_head); embeddings fp32",
+         "val_bpb": "full validation split, the project's own windowed evaluator",
+         "decode": "cached greedy, 64-token prompt + 64 new tokens, 5 repeats, median", "torch_threads": 2},
+        ("torch.ao.quantization is deprecated in torch 2.15 (torchao is the successor); it still runs here.",
+         "At ~2M parameters the model is small enough that quantize/dequantize overhead can outweigh the savings."),
+        "reports/serving/int8/<run_id>.json",
+    ),
+}

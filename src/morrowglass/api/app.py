@@ -16,6 +16,7 @@ import sys
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -33,6 +34,8 @@ from morrowglass.hardware import hardware_report
 from morrowglass.inference.generate import attention_maps, generate
 from morrowglass.model.transformer import ModelConfig, blueprint, compute_budget
 from morrowglass.repro import REPO_ROOT
+from morrowglass.serving.backends import HF_ALLOWED, Backend, HFBackend, MorrowglassBackend
+from morrowglass.serving.openai_api import APIError, build_openai_router
 
 torch.set_num_threads(2)
 store = Store()
@@ -53,6 +56,65 @@ async def lifespan(_: FastAPI):  # type: ignore[no-untyped-def]
 app = FastAPI(title="Morrowglass Model Foundry API", version="0.1.0", lifespan=lifespan)
 # The read-only contract for other local apps (GET /health, /capabilities, /runs, /runs/{id}), at the root.
 app.include_router(build_router(lambda: store))
+
+# ------------------------------------------------------------------ OpenAI-compatible serving
+# MORROWGLASS_DEFAULT_MODEL: model used when a request names none (needed by the harness's remote tokenizer).
+# MORROWGLASS_ENABLE_HF=1: also serve the pretrained reference (hf:distilgpt2) from the local HF cache only.
+_hf_backends: dict[str, Backend] = {}
+_backends: OrderedDict[tuple[int, str], Backend] = OrderedDict()  # one backend (and lock) per served model
+_hf_lock = threading.Lock()
+
+
+def resolve_backend(model: str | None) -> Backend:
+    model = model or os.environ.get("MORROWGLASS_DEFAULT_MODEL")
+    if not model:
+        raise APIError(400, "no model given and the server has no default (start it with --model RUN_ID)", "model")
+    if model in HF_ALLOWED:
+        if os.environ.get("MORROWGLASS_ENABLE_HF") != "1":
+            raise APIError(404, f"{model} is disabled on this server (MORROWGLASS_ENABLE_HF=1 enables it)",
+                           "model", "model_not_found")
+        with _hf_lock:
+            if model not in _hf_backends:
+                os.environ.setdefault("HF_HUB_OFFLINE", "1")  # never download from a request handler
+                try:
+                    _hf_backends[model] = HFBackend(model)
+                except OSError as e:
+                    raise APIError(404, f"{model} is not in the local Hugging Face cache", "model") from e
+            return _hf_backends[model]
+    key = (id(store), model)
+    with _hf_lock:
+        if key in _backends:
+            _backends.move_to_end(key)
+            return _backends[key]
+    try:
+        run = store.run(model)
+        if run["config"]["train"]["task"] != "lm":
+            raise APIError(400, f"{model} is not a language model run", "model")
+        net, tok = store.model(model)
+    except KeyError as e:
+        raise APIError(404, f"unknown model {model!r}", "model", "model_not_found") from e
+    except FileNotFoundError as e:
+        raise APIError(404, str(e), "model", "model_not_found") from e
+    with _hf_lock:
+        b = _backends.setdefault(key, MorrowglassBackend(model, net, tok, run["provenance"]))
+        while len(_backends) > 4:
+            _backends.popitem(last=False)
+    return b
+
+
+def list_models() -> list[dict[str, Any]]:
+    out = [{"id": r["run_id"], "object": "model", "created": 0, "owned_by": "morrowglass",
+            "morrowglass": {"provenance": r["provenance"], "tokenizer": r["tokenizer"], "params": r["params"],
+                            "val_bpb": r["val_bpb"], "instruction_tuned": False}}
+           for r in store.list_runs() if r["task"] == "lm" and r["has_checkpoint"]]
+    if os.environ.get("MORROWGLASS_ENABLE_HF") == "1":
+        out += [{"id": m, "object": "model", "created": 0, "owned_by": "huggingface (reference, local cache)",
+                 "morrowglass": {"provenance": "pretrained reference", "instruction_tuned": False}}
+                for m in HF_ALLOWED]
+    return out
+
+
+app.include_router(build_openai_router(resolve_backend, list_models))
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5101", "http://127.0.0.1:5101"],
                    allow_methods=["GET", "POST", "DELETE"], allow_headers=["*"])
 

@@ -25,6 +25,8 @@ import shutil
 import sys
 from typing import Any
 
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
 
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, default=str))
@@ -79,7 +81,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("report")
     sv = sub.add_parser("serve")
     sv.add_argument("--port", type=int, default=5100)
-    sv.add_argument("--host", default="127.0.0.1")
+    sv.add_argument("--host", default="127.0.0.1", help="loopback only: 127.0.0.1, ::1 or localhost")
+    sv.add_argument("--model", default=None, help="default model for /v1/* and /tokenize (a run id or hf:distilgpt2)")
+    sv.add_argument("--enable-hf", action="store_true",
+                    help="also serve hf:distilgpt2 from the local Hugging Face cache (never downloads)")
     args = ap.parse_args(argv)
 
     if args.cmd == "hw":
@@ -176,8 +181,19 @@ def main(argv: list[str] | None = None) -> int:
 
         print(build_report())
     elif args.cmd == "serve":
+        import os
+
         import uvicorn
 
+        if args.host not in LOOPBACK_HOSTS:
+            print(f"refusing to bind {args.host!r}: this API is loopback-only ({', '.join(sorted(LOOPBACK_HOSTS))})",
+                  file=sys.stderr)
+            return 2
+        if args.model:
+            os.environ["MORROWGLASS_DEFAULT_MODEL"] = args.model
+        if args.enable_hf:
+            os.environ["MORROWGLASS_ENABLE_HF"] = "1"
+            os.environ["HF_HUB_OFFLINE"] = "1"
         uvicorn.run("morrowglass.api.app:app", host=args.host, port=args.port, log_level="info")
     return 0
 

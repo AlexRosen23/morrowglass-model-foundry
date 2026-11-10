@@ -42,7 +42,7 @@ typecheck: ## mypy (strict defs)
 web-check: ## TypeScript typecheck + production build
 	cd web && npm run build
 
-ci: lint typecheck test smoke web-check ## Everything .github/workflows/ci.yml runs (Actions are disabled; run locally)
+ci: lint typecheck test smoke web-check ## Everything .github/workflows/ci.yml runs on GitHub Actions; run it locally before pushing
 
 api: ## API on 127.0.0.1:$(API_PORT)
 	$(MG) serve --port $(API_PORT)

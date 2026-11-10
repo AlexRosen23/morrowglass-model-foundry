@@ -31,8 +31,9 @@ Requirements:
 | `make ci` | all of the above, which is what `.github/workflows/ci.yml` runs |
 
 **CI status.** GitHub Actions runs `.github/workflows/ci.yml` on every pull request and on pushes to
-`main`. It was enabled with the owner's approval on 2026-11-08. Minutes count against the account's
-shared 2,000/month private-repo budget, so still run `make ci` locally before pushing.
+`main`. It was enabled with the author's approval on 2026-11-08, while the repository was still private.
+The repository has been public since 2026-11-09, so standard Linux runners no longer use the private-repo
+minute budget. Still run `make ci` locally before pushing: it is the same checks, and faster to iterate on.
 
 ## Running experiments
 

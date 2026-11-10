@@ -95,6 +95,9 @@ def main(argv: list[str] | None = None) -> int:
     le.add_argument("--limit", type=int, default=None, help="docs per task; plumbing check only (artifacts/)")
     le.add_argument("--port", type=int, default=5102)
     le.add_argument("--summarize-only", action="store_true")
+    pa = sub.add_parser("paired", help="paired block-bootstrap vs the best n-gram (EVALUATIONS['paired-baseline'])")
+    pa.add_argument("--device", default="cpu")
+    pa.add_argument("--report-only", action="store_true", help="rewrite docs/PAIRED_RESULTS.md from the record")
     sub.add_parser("serving-report", help="docs/SERVING_RESULTS.md from the saved serving/eval records")
     sub.add_parser("ledger")
     sub.add_parser("report")
@@ -229,6 +232,17 @@ def main(argv: list[str] | None = None) -> int:
         if not args.limit:
             s = summarize()
             _print({k: s[k] for k in ("checks", "verdict", "missing")})
+    elif args.cmd == "paired":
+        from morrowglass.eval.paired import paired_report_md, run_paired_study
+        from morrowglass.repro import REPO_ROOT, read_json
+
+        if args.report_only:
+            s = read_json(REPO_ROOT / "reports" / "paired" / "summary.json")
+            (REPO_ROOT / "docs" / "PAIRED_RESULTS.md").write_text(paired_report_md(s))
+        else:
+            s = run_paired_study(args.device)
+        _print({"verdict": s["verdict"], "checks": s["checks"],
+                "flagship": s["runs"][s["primary_run"]]["paired"][str(s["protocol"]["primary_block_bytes"])]})
     elif args.cmd == "serving-report":
         from morrowglass.serving.report import build_serving_report
 

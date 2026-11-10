@@ -54,6 +54,26 @@ def _run_table(rows: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
+def _paired_lines() -> list[str]:
+    """Short summary of reports/paired/summary.json (post-hoc paired re-analysis), if measured."""
+    pp = REPORTS / "paired" / "summary.json"
+    if not pp.exists():
+        return []
+    s = read_json(pp)
+    blk = str(s["protocol"]["primary_block_bytes"])
+    L = ["## Paired re-analysis vs the best n-gram (post-hoc)", "",
+         f"Registered {s['registered']} after the scratch verdict was known (`EVALUATIONS['paired-baseline']`); it "
+         "does not change that verdict. Same validation bytes, contiguous "
+         f"{int(blk) // 1024} KiB blocks, same resampled blocks for both models. Verdict for the flagship: "
+         f"**{s['verdict']}**. Full tables: [PAIRED_RESULTS.md](PAIRED_RESULTS.md).", "",
+         "| run | bpb(run) - bpb(n-gram) | paired 95% interval | lower in every play |", "|---|---:|---|---|"]
+    for rid, r in s["runs"].items():
+        p = r["paired"][blk]
+        L.append(f"| `{rid}` | {p['difference']:+.4f} | [{p['ci95'][0]:+.4f}, {p['ci95'][1]:+.4f}] | "
+                 f"{'yes' if all(x['difference'] < 0 for x in r['plays']) else 'no'} |")
+    return L + [""]
+
+
 def build_results_md(results: dict[str, dict[str, Any]]) -> str:
     bl_path = REPORTS / "baselines-shakespeare.json"
     L = ["# Results", "",
@@ -73,6 +93,7 @@ def build_results_md(results: dict[str, dict[str, Any]]) -> str:
             obs = {k: v for k, v in r["observations"].items() if k != "calibration"}
             L += ["<details><summary>observations (raw)</summary>", "", "```json", json.dumps(obs, indent=1, default=str), "```",
                   "</details>", ""]
+    L += _paired_lines()
     tl = REPORTS / "test_access_log.jsonl"
     L += ["## Locked test split", ""]
     if tl.exists():
@@ -114,6 +135,8 @@ def build_report_md(results: dict[str, dict[str, Any]]) -> str:
             L += [r["researcher_note"].strip(), ""]
         else:
             L += ["_Researcher note pending._", ""]
+        if n == "scratch":
+            L += [ln.replace("## ", "### ", 1) if ln.startswith("## ") else ln for ln in _paired_lines()]
     return "\n".join(L) + "\n"
 
 
@@ -198,6 +221,13 @@ def build_metrics_json(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
         add("Digit-sum scratchpad: in-distribution final-answer accuracy, all 4 runs (min)",
             round(min(v["val_iid_acc"] for v in acc.values()), 4), "accuracy", ",".join(sp["arms"]),
             "uv run morrowglass run digitsum-scratchpad")
+    pp = REPORTS / "paired" / "summary.json"
+    if pp.exists():
+        ps = read_json(pp)
+        pf = ps["runs"][ps["primary_run"]]["paired"][str(ps["protocol"]["primary_block_bytes"])]
+        add("Flagship minus best n-gram, paired over 8 KiB validation blocks (post-hoc; 95% interval)",
+            [round(pf["difference"], 4), [round(pf["ci95"][0], 4), round(pf["ci95"][1], 4)]], "bits/byte",
+            "reports/paired/summary.json", "make paired")
     tests_file = REPORTS / "test_summary.json"
     if tests_file.exists():
         ts = read_json(tests_file)

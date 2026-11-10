@@ -24,6 +24,17 @@ Limitations: one seed; the model is undertrained (val loss was still falling at 
 Next test: the extended profile (10k steps, ~20 min, needs owner approval), which the capacity results suggest would separate the curves.
 Decision: report as not supported. The same architecture at 4.85M parameters (lm-byte-medium) and with BPE tokens (lm-bpe1024-small) does beat the baseline with non-overlapping intervals on validation and test, which is evidence that capacity and context in bytes, not the architecture, limit the flagship.
 
+### Paired re-analysis vs the best n-gram (post-hoc)
+
+Registered 2026-11-09 after the scratch verdict was known (`EVALUATIONS['paired-baseline']`); it does not change that verdict. Same validation bytes, contiguous 8 KiB blocks, same resampled blocks for both models. Verdict for the flagship: **supported**. Full tables: [PAIRED_RESULTS.md](PAIRED_RESULTS.md).
+
+| run | bpb(run) - bpb(n-gram) | paired 95% interval | lower in every play |
+|---|---:|---|---|
+| `lm-bpe1024-small-eb29b8fb-s0` | -0.0999 | [-0.1079, -0.0918] | yes |
+| `lm-byte-medium-b01e2a16-s0` | -0.0703 | [-0.0811, -0.0597] | yes |
+| `lm-byte-small-240f8c28-s0` | -0.1137 | [-0.1244, -0.1019] | yes |
+| `lm-byte-small-2822813d-s0` | -0.0212 | [-0.0310, -0.0109] | yes |
+
 ## Byte vs BPE-1024 tokenization
 
 **Verdict: supported.** BPE 2.007 vs byte 2.086 val bpb

@@ -241,6 +241,7 @@ ALL = ["scratch", "tokenization", "capacity", "optimization", "digitsum", "digit
 FLAGSHIP_RUN = "lm-byte-small-2822813d-s0"  # pre-registered flagship, standard budget
 EXTENDED_RUN = "lm-byte-small-240f8c28-s0"  # same model, extended budget (owner-approved); best scratch val bpb
 BEST_BPE_RUN = "lm-bpe1024-small-eb29b8fb-s0"  # best scratch model on validation at the standard budget
+MEDIUM_RUN = "lm-byte-medium-b01e2a16-s0"  # capacity study, 4.85M parameters
 
 
 @dataclass(frozen=True)
@@ -315,5 +316,40 @@ EVALUATIONS: dict[str, Evaluation] = {
         ("torch.ao.quantization is deprecated in torch 2.15 (torchao is the successor); it still runs here.",
          "At ~2M parameters the model is small enough that quantize/dequantize overhead can outweigh the savings."),
         "reports/serving/int8/<run_id>.json",
+    ),
+    "paired-baseline": Evaluation(
+        "paired-baseline", "Paired re-analysis: scratch models vs the best n-gram on the same validation bytes",
+        "2026-11-09",
+        "The pre-registered scratch verdict compared two independent 95% intervals. Both models are scored on the "
+        "same validation bytes, so their errors are correlated and an unpaired comparison is conservative. Does a "
+        "paired test separate the flagship from the best n-gram (Kneser-Ney 4-gram on BPE-1024), and does the "
+        "ordering hold in each of the three validation plays?",
+        "Registered after the scratch verdict ('not supported': overlapping intervals) was known, so this is a "
+        "post-hoc analysis and it does not change that verdict. Prediction: on the same validation bytes, "
+        "bpb(flagship) - bpb(KN-4) is negative, its paired 95% block-bootstrap interval (8 KiB blocks) lies "
+        "entirely below zero, and the difference is negative in each of the three validation plays.",
+        "Flagship: upper end of the paired 95% interval (contiguous 8 KiB byte blocks, 2,000 resamples, seed 0) "
+        "< 0 AND per-play difference < 0 for all 3 validation plays. The extended, BPE-small and medium runs are "
+        "reported the same way without a criterion, and 256-byte blocks are reported for comparison with the "
+        "original per-window interval.",
+        (FLAGSHIP_RUN, EXTENDED_RUN, BEST_BPE_RUN, MEDIUM_RUN),
+        {"split": "validation only (the locked test split stays closed)", "device": "cpu",
+         "transformer_scoring": "the project's own non-overlapping block_size windows (as in summary.json); the "
+                                "per-token total must match the run's recorded val bpb within 1e-3",
+         "baseline": "Kneser-Ney order selected on validation in reports/baselines-shakespeare.json, fitted on "
+                     "train, scoring every token after the first with its n-1 token history",
+         "alignment": "each token's bits go to the block that holds its last byte; blocks are contiguous byte "
+                      "ranges of the validation text, identical for every tokenizer",
+         "statistic": "sum(bits_A)/sum(bytes_A) - sum(bits_B)/sum(bytes_B) over resampled blocks; the same "
+                      "block indices are drawn for both models",
+         "block_bytes": [8192, 256], "primary_block_bytes": 8192, "resamples": 2000, "seed": 0,
+         "plays": "boundaries found from the manifest's validation work titles"},
+        ("Post-hoc: registered after the unpaired verdict was known. The pre-registered verdict stays 'not "
+         "supported'; this answers a better-posed question, it does not overturn the first one.",
+         "Blocks inside a play are still correlated (dialogue, recurring names); 8 KiB blocks reduce that, they do "
+         "not remove it. Three plays give a sign per play, not an interval.",
+         "One seed per model: this says nothing about run-to-run variance, which a paired test on fixed "
+         "checkpoints cannot see."),
+        "reports/paired/summary.json",
     ),
 }

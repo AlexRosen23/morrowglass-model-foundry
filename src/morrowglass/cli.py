@@ -92,6 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     pa = sub.add_parser("paired", help="paired block-bootstrap vs the best n-gram (EVALUATIONS['paired-baseline'])")
     pa.add_argument("--device", default="cpu")
     pa.add_argument("--report-only", action="store_true", help="rewrite docs/PAIRED_RESULTS.md from the record")
+    pa.add_argument("--seeds", action="store_true", help="score every flagship seed (scratch-seeds) instead")
     sub.add_parser("serving-report", help="docs/SERVING_RESULTS.md from the saved serving/eval records")
     sub.add_parser("ledger")
     sub.add_parser("report")
@@ -216,6 +217,13 @@ def main(argv: list[str] | None = None) -> int:
         from morrowglass.eval.paired import paired_report_md, run_paired_study
         from morrowglass.repro import REPO_ROOT, read_json
 
+        if args.seeds:
+            from morrowglass.eval.paired import run_seed_paired
+
+            r = run_seed_paired(args.device)
+            _print({rid: {"seed": x["seed"], "val_bpb": x["val_bpb"], "matches_record": x["matches_record"],
+                          "paired_8k": x["paired"]["8192"]} for rid, x in r["runs"].items()})
+            return 0
         if args.report_only:
             s = read_json(REPO_ROOT / "reports" / "paired" / "summary.json")
             (REPO_ROOT / "docs" / "PAIRED_RESULTS.md").write_text(paired_report_md(s))

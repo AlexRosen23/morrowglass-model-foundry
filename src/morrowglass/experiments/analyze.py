@@ -99,7 +99,108 @@ def ci_separated(lower_better: list[float] | None, other: list[float] | None) ->
     return lower_better[1] < other[0]
 
 
+SEED_FOLLOWUPS = {"scratch-seeds": "scratch", "digitsum-scratchpad-seeds": "digitsum-scratchpad"}
+
+
+def _diff_se(p1: float, n1: int, p2: float, n2: int) -> float:
+    return float((p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2) ** 0.5)
+
+
+def analyze_seeds(name: str) -> dict[str, Any]:
+    """Seed follow-ups: the new arms plus the parent experiment's existing seeds, judged by the registered criterion."""
+    exp = build(name, "standard")
+    parent = build(SEED_FOLLOWUPS[name], "standard")
+    runs_dir = runs_dir_for("standard")
+    arm_ids = [a.run_id for a in parent.arms if a.seed == 0 or name == "digitsum-scratchpad-seeds"] + \
+        [a.run_id for a in exp.arms]
+    recs = {rid: load_run(runs_dir, rid) for rid in arm_ids}
+    out_dir = experiments_dir_for("standard") / name
+    result: dict[str, Any] = {
+        "experiment": name, "title": exp.title, "track": exp.track, "profile": "standard",
+        "hypothesis": exp.hypothesis, "criterion": exp.criterion, "caveats": exp.caveats, "arms": arm_ids,
+        "new_arms": [a.run_id for a in exp.arms], "missing_runs": [k for k, v in recs.items() if v is None],
+        "analyzed": now_iso(), "analysis_git": git_provenance()["commit"], "plots": [], "observations": {}}
+    obs: dict[str, Any] = result["observations"]
+    verdict, detail = "pending", f"{len(result['missing_runs'])} run(s) not executed yet"
+    if not result["missing_runs"]:
+        ok = {k: v for k, v in recs.items() if v is not None}
+        result["table"] = [_arm_row(r) for r in ok.values()]
+        if name == "scratch-seeds":
+            vals = {r["config"]["train"]["seed"]: _val(r)["bits_per_byte"] for r in ok.values()}
+            obs["val_bpb_by_seed"] = vals
+            obs["seed_range"] = max(vals.values()) - min(vals.values())
+            obs["seed_mean"] = statistics.fmean(vals.values())
+            obs["seed_stdev"] = statistics.stdev(vals.values())
+            pp = REPORTS / "paired" / "scratch-seeds.json"
+            bl = read_json(REPORTS / "baselines-shakespeare.json")
+            obs["unpaired_separated_by_seed"] = {
+                r["config"]["train"]["seed"]: ci_separated(_val(r)["bits_per_byte_ci95"], bl["best_val_bpb_ci95"])
+                for r in ok.values()}
+            if not pp.exists():
+                verdict, detail = "pending", "paired scores not computed (run `morrowglass paired --seeds`)"
+            else:
+                ps = read_json(pp)
+                blk = str(ps["protocol"]["primary_block_bytes"])
+                paired = {ps["runs"][rid]["seed"]: ps["runs"][rid]["paired"][blk] for rid in ps["runs"]}
+                obs["paired_by_seed"] = paired
+                obs["scores_match_records"] = all(r["matches_record"] for r in ps["runs"].values())
+                all_below = all(v["ci95"][1] < 0 for v in paired.values()) and len(paired) == len(vals)
+                gap0 = bl["best_val_bpb"] - vals[0]
+                obs["seed0_gap_to_ngram"] = gap0
+                small_spread = obs["seed_range"] < 0.021
+                if not obs["scores_match_records"]:
+                    verdict = "invalid (rescored totals do not match the run records)"
+                else:
+                    verdict = "supported" if all_below and small_spread else (
+                        "partially supported" if all_below or small_spread else "not supported")
+                detail = ("val bpb by seed " + ", ".join(f"s{k} {v:.4f}" for k, v in sorted(vals.items()))
+                          + f" (range {obs['seed_range']:.4f}); paired vs n-gram "
+                          + "; ".join(f"s{k} {v['difference']:+.4f} [{v['ci95'][0]:+.4f}, {v['ci95'][1]:+.4f}]"
+                                      for k, v in sorted(paired.items())))
+        else:
+            res: dict[str, Any] = {}
+            for r in ok.values():
+                arm = "posaug" if r["config"]["train"]["pos_augment"] else "plain"
+                te = r.get("test_eval", {}).get("results")
+                res.setdefault(r["config"]["train"]["seed"], {})[arm] = {
+                    "run_id": r["summary"]["run_id"], "val_iid_acc": r["summary"]["final"]["val_iid"]["accuracy"],
+                    "near": te["test_ood_near"] if te else None, "far": te["test_ood_far"] if te else None}
+            obs["by_seed"] = res
+            if any(a["far"] is None for d in res.values() for a in d.values()):
+                verdict, detail = "pending", "OOD splits are locked; run `morrowglass final-test` on the new runs"
+            else:
+                plain_ok = all(d["plain"]["val_iid_acc"] > 0.95 and d["plain"]["far"]["accuracy"] < 0.5
+                               for d in res.values())
+                transfers = {}
+                for seed, d in sorted(res.items()):
+                    a, b = d["posaug"]["far"], d["plain"]["far"]
+                    gain = a["accuracy"] - b["accuracy"]
+                    se = _diff_se(a["accuracy"], a["n"], b["accuracy"], b["n"])
+                    transfers[seed] = {"far_gain": gain, "se": se, "transfers": gain > 3 * se,
+                                       "near_posaug": d["posaug"]["near"]["accuracy"],
+                                       "far_posaug": a["accuracy"], "far_plain": b["accuracy"]}
+                obs["transfer"] = transfers
+                k = sum(t["transfers"] for t in transfers.values())
+                obs["transfer_count"] = k
+                majority = k >= 3
+                verdict = "supported" if plain_ok and majority else (
+                    "partially supported" if plain_ok or majority else "not supported")
+                detail = (f"plain at chance on 12-16 terms for all seeds: {plain_ok}; position augmentation "
+                          f"transfers in {k} of {len(transfers)} seeds ("
+                          + ", ".join(f"s{s_} far {t['far_posaug']:.3f} vs {t['far_plain']:.3f}"
+                                      for s_, t in transfers.items()) + ")")
+    result["verdict"], result["verdict_detail"] = verdict, detail
+    note = out_dir / "note.md"
+    result["researcher_note"] = note.read_text() if note.exists() else None
+    write_json(out_dir / "result.json", result)
+    return result
+
+
 def analyze(name: str, profile: str = "standard") -> dict[str, Any]:
+    if name in SEED_FOLLOWUPS:
+        if profile != "standard":
+            return {"experiment": name, "verdict": "n/a", "verdict_detail": "standard profile only"}
+        return analyze_seeds(name)
     exp: Experiment = build(name, profile)
     runs_dir = runs_dir_for(profile)
     # Extended-profile analyses are separate findings ("<name>-extended") so they never overwrite the standard ones.

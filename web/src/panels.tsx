@@ -426,6 +426,7 @@ const WHAT_FAILED: Record<string, string> = {
   "break-overfit": "A 4.8M-parameter model is trained on only 240 KB of text with no regularisation.",
   digitsum: "A model trained on 3-6-term sums is asked to sum 8-16 terms (unseen lengths and positions).",
   "digitsum-scratchpad": "With a running-sum scratchpad the rule is learnable; does it transfer to 8-16 terms at unseen positions?",
+  "digitsum-scratchpad-seeds": "Seeds 0 and 1 disagreed (one transferred, one did not). Is transfer with position augmentation the rule or the exception?",
 };
 const WHAT_CHANGED: Record<string, string> = {
   "break-lr": "Keep warmup + clipping as defaults, and select the learning rate with the optimisation experiment.",
@@ -434,6 +435,7 @@ const WHAT_CHANGED: Record<string, string> = {
   "break-overfit": "Use dropout + early stopping on scarce data; report best-on-validation checkpoints.",
   digitsum: "The plain format never left chance (parity-like plateau); switched to a running-sum scratchpad follow-up.",
   "digitsum-scratchpad": "Random position offsets in training; measured per seed on the locked OOD splits.",
+  "digitsum-scratchpad-seeds": "Three more seeds per arm, same recipe; transfer counted only when it beats the plain twin by more than 3 standard errors.",
 };
 
 export function JobPanel({ onDone }: { onDone: () => void }) {

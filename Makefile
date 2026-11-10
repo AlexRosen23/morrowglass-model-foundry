@@ -95,9 +95,9 @@ paired: ## Paired block-bootstrap of scratch models vs the best n-gram on valida
 serving-report: ## docs/SERVING_RESULTS.md from the saved serving records
 	$(MG) serving-report
 
-reproduce-scratch: ## Re-run the flagship from scratch into a fresh run (keeps the original)
-	$(MG) baselines
-	$(MG) run scratch --profile standard --force
+reproduce-scratch: ## Re-train the flagship into reports/reproduce/, compare with the record, install weights if none (~5 min)
+	$(MG) data prepare --fetch
+	$(MG) reproduce $(FLAGSHIP)
 
 clean: ## Remove caches, smoke outputs and the web build (keeps checkpoints and evidence)
 	rm -rf .pytest_cache .ruff_cache .mypy_cache reports/smoke web/dist artifacts/tokens artifacts/ledger.sqlite

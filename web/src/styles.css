@@ -191,3 +191,7 @@ pre.gen { white-space: pre-wrap; font: 12.5px/1.55 var(--mono); margin: 0; max-h
   .grid2, .chain { grid-template-columns: 1fr; }
   .findbody dl { grid-template-columns: 1fr; }
 }
+
+/* fix/workbench-ui: say which checkpoint is really shown, and flag leaky metrics */
+.notice { margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--warn); background: var(--panel-2); font-size: 13px; display: grid; gap: 4px; }
+.leakmark { color: var(--bad); font-weight: 600; }

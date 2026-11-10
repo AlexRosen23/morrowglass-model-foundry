@@ -28,7 +28,7 @@ It is for engineers who want to see how a small model behaves when data and comp
 | **Status** | Working. All 12 research experiments and all 3 serving/eval studies have run and are analysed. Nothing is deployed: everything runs on 127.0.0.1. |
 | **Stack** | Python 3.12, PyTorch 2.15 (MPS or CPU), HF `tokenizers`, FastAPI, SQLite (a derived index only), safetensors, lm-eval 0.4.13 (separate venv), Vite + React + TypeScript, `uv`, `pytest`, `ruff`, `mypy` |
 | **Run it** | `make setup && make smoke && make demo`, then open http://127.0.0.1:5101 |
-| **Verified** | 2026-11-09, against `main` at `2758c42`. A fresh clone passed `make setup` and `make ci` (114/114 tests). `make demo` was started and checked in a browser, and `/v1/completions` was called on a real checkpoint. |
+| **Verified** | 2026-11-09, against `main` at `2758c42`. A fresh clone passed `make setup` and `make ci` (114/114 tests). `make demo` was started and checked in a browser, and `/v1/completions` was called on a real checkpoint. A second, skeptical-reviewer audit of a fresh clone the same day led to fixes [#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5), [#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6) and [#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7); this README describes the project with them merged. |
 | **Hardware the evidence came from** | Apple M5 Pro (18 cores, 48 GB), PyTorch MPS; 4 CPU threads for training, 2 for the serving studies; a machine shared with other workloads |
 | **Reviewing for AI engineering?** | Start with [serving and standard evals](#serving-and-standard-evals), then [docs/AI_ENGINEER_READINESS.md](docs/AI_ENGINEER_READINESS.md) |
 
@@ -95,6 +95,8 @@ Each of these is visible in the code, not just the docs:
 | Trainer: AdamW, warmup + cosine, accumulation, clipping, early stopping, non-finite handling, STOP-file cancel, time budget | Working | `tests/test_trainer.py` (divergence detected without crashing, early stop, cancellation) |
 | Verified checkpoints and resume | Working | Save → load gives identical logits; corruption is rejected; resume is bit-identical on CPU (tests). MPS runs are *not* bit-reproducible. |
 | Pre-registered experiment registry → runner → analysis → report | Working | 32 runs in `reports/runs/`, 12 verdicts in `reports/experiments/*/result.json` |
+| Re-training a committed run without touching its record (`morrowglass reproduce`) | Working | `tests/test_evidence_integrity.py` (the committed directory stays byte-identical). On a fresh clone `make reproduce-scratch` re-trained the flagship to 2.0840 bpb against the committed 2.0858 (inside its interval) in 7 min 42 s, and installed the weights labelled as re-trained. `run --force` refuses to overwrite a committed record. |
+| Paired comparison against the best n-gram on the same bytes | Working (post-hoc, validation only) | `reports/paired/summary.json`, [docs/PAIRED_RESULTS.md](docs/PAIRED_RESULTS.md); `tests/test_paired.py` (per-token bits reproduce both evaluators; byte blocks line up across tokenizers) |
 | Locked test split with an access log | Working | `train/tasks.py` (`final_eval` excludes test); 3 logged openings in `reports/test_access_log.jsonl` |
 | Calibration (top-1 ECE, reliability diagram) and latency benchmark | Working | ECE behaves on known cases (test); `reports/runs/lm-byte-small-2822813d-s0/bench.json` |
 | Digit-sum algorithmic track (length-shift splits, scratchpad variant) | Working | Expressions never cross splits (test); a copy-rule control proves the task pipeline can learn (`tests/test_synthetic_learning.py`) |
@@ -144,7 +146,10 @@ These were run from a fresh clone of `2758c42` on 2026-11-09, and `make ci` pass
 **Notes**
 
 - `demo.sh` refuses to start if a port is busy. Set `API_PORT` and `WEB_PORT` to run a second copy; the workbench's proxy follows `API_PORT`.
-- Checkpoints aren't in git. On a fresh clone the ledger, curves, findings and Serving tables all work. Generate, Attention and `/v1` need a checkpoint: run `make smoke` for a tiny one, or `make data && make standard` for the real ones.
+- Checkpoints aren't in git. On a fresh clone the ledger, curves, findings and Serving tables all work. Generate, Attention and `/v1` need a local checkpoint:
+  - `make reproduce-scratch` (about 5-8 min) downloads the corpus, re-trains the flagship from its committed config into `reports/reproduce/`, compares it with the record and, if it reproduces, installs the weights. The workbench and `/v1` label them as re-trained, not the original checkpoint.
+  - Without it, those tabs fall back to a smoke checkpoint and say so. Its output is plumbing, not evidence.
+  - `make standard` does not help here: it skips every run whose record is already committed.
 
 ### Calling a checkpoint like an OpenAI model
 
@@ -179,6 +184,8 @@ make lm-eval-setup         # pinned lm-eval in .venv-lmeval (separate from the p
 make lm-eval               # harness through /v1/completions on 127.0.0.1:5102 (~2.5 h on a busy M5 Pro)
 make export-hf             # Hub-compatible folders in artifacts/hf_export/ (local only)
 make serving-report        # regenerates docs/SERVING_RESULTS.md
+make paired                # paired block bootstrap vs the best n-gram (CPU, ~3 min) → reports/paired/, docs/PAIRED_RESULTS.md
+make reproduce-scratch     # re-train the flagship into reports/reproduce/ and compare with the committed record
 ```
 
 Single steps:
@@ -186,7 +193,8 @@ Single steps:
 ```bash
 uv run morrowglass sanity                              # overfit-one-batch check
 uv run morrowglass baselines
-uv run morrowglass run scratch --profile standard
+uv run morrowglass run scratch --profile standard     # skips runs whose record exists; --force refuses to overwrite one
+uv run morrowglass reproduce <run_id>                 # re-train a committed run elsewhere and compare
 uv run morrowglass final-test --runs <run_id> --reason "<why>"   # opens the locked test split, and logs it
 uv run morrowglass bench <run_id>
 uv run morrowglass export-artifact <run_id>
@@ -240,7 +248,8 @@ flowchart LR
 3. **Model.** [`model/transformer.py`](src/morrowglass/model/transformer.py) builds `MorrowglassLM`, a pre-LayerNorm GPT-style decoder: 4 layers, 4 heads, d_model 192, context 256, byte vocabulary, 1,869,504 parameters. The architecture doc has a [shape-by-shape walkthrough](docs/ARCHITECTURE.md#the-model-line-by-line).
 4. **Training.** [`train/trainer.py`](src/morrowglass/train/trainer.py) runs AdamW (lr 3e-3, β = 0.9/0.95, weight decay 0.1) with 100 warmup steps and a cosine decay, clipping at 1.0. It ran 2,500 steps × 32 × 256 = 20.48M tokens and evaluated every 100 steps. The run id is name + config hash + seed, so the same config always maps to the same id.
 5. **Records.** `metadata.json` holds the commit, command, seed, dataset and tokenizer hashes, and hardware. `metrics.jsonl` holds every logged step. `summary.json` holds the best step, wall time (291 s) and final evaluation on the best checkpoint. Checkpoints go to `artifacts/` with a `.sha256.json` beside them.
-6. **Verdict.** [`experiments/analyze.py`](src/morrowglass/experiments/analyze.py) compares the run with the val-chosen baseline (KN-4 on BPE tokens) and writes `reports/experiments/scratch/result.json`: **not supported**, 2.086 [2.074, 2.098] vs 2.107 [2.095, 2.120]. The intervals overlap.
+6. **Verdict.** [`experiments/analyze.py`](src/morrowglass/experiments/analyze.py) compares the run with the val-chosen baseline (KN-4 on BPE tokens) and writes `reports/experiments/scratch/result.json`: **not supported**, 2.086 [2.074, 2.098] vs 2.107 [2.095, 2.120]. The intervals overlap. A later, explicitly post-hoc **paired** test on the same bytes separates them (below); the pre-registered verdict stays.
+   - **Paired re-analysis (post-hoc).** Both models were scored on the same validation bytes, so their errors are correlated. [`eval/paired.py`](src/morrowglass/eval/paired.py) maps every token's bits onto contiguous 8 KiB byte blocks, the same for both tokenizers, and bootstraps the difference with the same resampled blocks. Flagship minus KN-4: **−0.021 bpb, paired 95% interval [−0.031, −0.011]**, lower in 40 of 52 blocks and in all three plays. On those same blocks the unpaired intervals overlap ([2.061, 2.112] vs [2.083, 2.132]).
 7. **Test, once.** After all selection was finished, `final-test` opened the test split for this run and the other finalists. The opening was logged with its reason.
 8. **Served.** The API rebuilds `artifacts/ledger.sqlite` from the JSON and serves it, and the workbench draws the curves from `metrics.jsonl`. The same checkpoint is loaded, after hash verification, by:
    - `/api/generate`, which shows each token's probability with a note that it is not calibrated confidence;
@@ -264,6 +273,7 @@ All work was on feature branches, merged with merge commits rather than squashed
 | Integration | Read-only `/health`, `/capabilities`, `/runs` contract; `demo.sh` works from a launcher's minimal PATH | [PR #2](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/2), merged 2026-11-09 |
 | F: serving and standard evals | Three studies pre-registered before any measurement (`d7e6512`); KV cache (`cf1c16d`); `/v1` endpoints (`bd81a4b`); harness runner, Hub export, int8, Serving tab (`be188a3`); generated serving report (`3987474`); results (`0594894`); Hub-name fix (`9fca106`) | [PR #3](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/3), merged 2026-11-09 |
 | Attach | The author's private Constellation dashboard opens this app and reads its runs | merged 2026-11-09 (private repo) |
+| G: skeptical-reviewer audit | Fresh-clone audit of every tab and claim. Fixes: evidence-integrity and fresh-clone API ([#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5)); workbench honesty and crash fixes ([#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6)); a paired re-analysis, registered in its own commit (`3434773`) before measuring ([#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7)) | 2026-11-09 |
 
 The repository was made public on 2026-11-09, after PR #3.
 
@@ -295,6 +305,11 @@ The full table, with rejected alternatives, is in [docs/ENGINEERING_DECISIONS.md
 - **The KV cache gave no gain on MPS.** At 2M parameters, kernel-launch overhead dominates. The study reports MPS without a criterion, and the speed-up claim is CPU-only.
 - **int8 made decoding slower.** The registered hypothesis (int8 is faster with < 0.01 bpb loss) failed: 0.77x and 0.54x. It is kept as a negative result.
 - **Two runs collided on one Hub repo name.** The standard and extended flagships produced the same name. Names now include the config hash and seed (`9fca106`).
+- **"Reproduce" would have overwritten the evidence.** The audit found that `make reproduce-scratch` claimed to keep the original, but the run id is a hash of the config. So `run --force` would have re-trained into the committed run's own directory and left its locked-test result attached to new weights. `morrowglass reproduce` now re-trains into `reports/reproduce/` and compares; `--force` refuses to replace a committed record (#5).
+- **The demo quietly showed the wrong model.** On a fresh clone (no weights in git), Generate, Attention and the `/v1` card swapped the selected flagship for a smoke checkpoint producing gibberish, labelled only "LIVE SAMPLE". The panels now say which checkpoint they show and why (#6).
+- **A leaky number looked like the best score in the ledger.** The no-causal-mask run reads "val 0.013 bpb", which is the leaky windowed metric. It is now marked `leaky` (#5, #6).
+- **Switching models blanked the app.** With layer 3 head 3 selected on a 4-head model, picking a 2-head model indexed past the attention array and unmounted the whole page. The layer and head are now clamped, and every tab sits in an error boundary (#6).
+- **Small but real.** ⌘C (copy) cleared the curve overlay. After a UI smoke job re-trained a checkpoint, `/v1` kept serving the old weights. `make data` dirtied a fresh clone by rewriting a committed manifest's timestamp. All fixed (#5, #6).
 
 ## Results and evidence
 
@@ -331,17 +346,20 @@ All language-modelling numbers are bits per UTF-8 byte on held-out plays (lower 
 | Experiment | Verdict | What was measured |
 |---|---|---|
 | `scratch`: flagship beats the best n-gram with non-overlapping CIs | **Not supported** (standard) | 2.086 vs 2.107; intervals overlap |
+| `paired-baseline` (post-hoc, registered before measuring): the flagship is lower on the same bytes, paired 8 KiB-block interval below 0, and lower in every play | Supported | −0.021 [−0.031, −0.011]; all 3 plays. Extended −0.114, BPE-small −0.100, medium −0.070, each with an interval below 0. Does not change the `scratch` verdict |
 | `scratch-extended`: same criterion at 10k steps | Supported | 1.993 vs 2.107; reported as a separate finding, not a replacement |
 | `tokenization`: BPE-1024 beats byte at equal steps | Supported | 2.007 vs 2.086. Not apples-to-apples: BPE sees about 2.4x more text per step (2.38 bytes/token); stated up front |
 | `capacity`: bigger is better on 4.5 MB, and medium overfits on 240 KB | Supported | tiny 2.335 / small 2.086 / medium 2.037. On 240 KB, medium's val loss rose 1.26 nats after step 550 while train loss kept falling |
 | `optimization`: warmup + cosine beats the alternatives across 3 seeds | **Not supported** | Constant lr 3e-3 without warmup matched it (mean 2.623 vs 2.644; ranges overlap). lr 1e-3 was clearly worse (3.188) |
 | `digitsum`: learns in distribution, fails on length shift | **Not supported** | Every arm stayed at chance (≈ 0.10 accuracy; loss = ln 10) |
-| `digitsum-scratchpad` (post hoc follow-up) | Supported, seed-dependent | 100% in distribution for all 4 runs. Plain positions at chance on 8-16 terms. With position augmentation, seed 1 reached 98.5% / 88.8% (8-10 / 12-16 terms) and seed 0 reached 34.6% / 10.5% |
+| `digitsum-scratchpad` (post hoc follow-up) | Supported\*, seed-dependent | 100% in distribution for all 4 runs. Plain positions at chance on 8-16 terms. With position augmentation, seed 1 reached 98.5% / 88.8% (8-10 / 12-16 terms) and seed 0 reached 34.6% / 10.5% |
 | `break-lr`: lr 0.1 fails, warmup + clip alone doesn't rescue it, lr 3e-3 does | Supported | best val 4.078 → 3.763 → 3.422 bpb (tiny model, 400 steps) |
 | `break-mask`: no mask → training loss collapses within 400 steps | **Not supported** | Train loss 2.441 vs 2.386 (causal); no collapse yet |
 | `break-mask-long` (post hoc, 2,000 steps) | Supported | Train loss 0.010 vs 1.564. Leaky val looks perfect (0.0135 bpb); leak-free scoring gives 3.379 vs 2.571 |
 | `break-overfit`: dropout 0.2 + early stopping beats memorising 240 KB | Supported | Best val loss 1.886 → 1.841; the fix stopped early at step 1200 |
 | `lora`: adapters beat frozen distilgpt2 with non-overlapping CIs | Supported | 1.941 → 1.760 |
+
+\* The code's verdict is "supported" because both position-augmented seeds beat their plain twins. For seed 0 on 12-16 terms the margin is +0.2 points (10.5% vs 10.3%, standard error about 0.7), which is noise. The workbench now shows this caveat next to the badge.
 
 **Calibration** (top-1 ECE, validation): flagship 0.029, BPE-small 0.055, medium 0.027 (`docs/RESULTS.md`).
 
@@ -400,7 +418,8 @@ Quality held, but decoding got slower. The fp32 baselines here were far slower t
   - once for the extended flagship.
 
   No run was tuned after its test opening, and no serving study opened the test split.
-- **Resume evidence.** `resume_evidence/metrics.json` lists 14 claims, all `verified` and each pointing at its source file. Only verified claims may be used.
+- **Resume evidence.** `resume_evidence/metrics.json` lists 15 claims (14, plus the paired difference from #7), all `verified` and each pointing at its source file. Only verified claims may be used.
+- **The paired re-analysis stayed on validation.** It did not open the test split again.
 
 ## Limitations and what's next
 
@@ -413,13 +432,16 @@ Quality held, but decoding got slower. The fp32 baselines here were far slower t
 - **Serving scope.** It's a single process at batch 1, with no continuous batching, auth, rate limiting or tracing, no container and no deployment.
 - **The cache can't slide.** With learned absolute positions, past 256 tokens the cache falls back to exact recomputation.
 - **int8 implementation.** It uses the deprecated `torch.ao.quantization` API. Cached and uncached int8 logits differ by about 6e-3, because activation scales are chosen per call.
-- **Reproducibility.** MPS runs are not bit-reproducible; CPU resume is.
+- **Reproducibility.** MPS runs are not bit-reproducible; CPU resume is. Re-training the flagship on MPS from the same config and seed moved validation bpb by 0.0018, a useful floor for "the same run, twice".
+- **Checkpoint selection.** The best checkpoint is picked on a 64-window subset of validation, and the full validation split is then reported. That is mildly optimistic for runs whose best step is not the last (the extended run: 8,400 of 10,000). The once-opened test split is the unbiased number.
+- **Interval width.** The per-run intervals bootstrap 256-token windows as if they were independent. Neighbouring windows are correlated: 8 KiB blocks give intervals about twice as wide ([docs/PAIRED_RESULTS.md](docs/PAIRED_RESULTS.md)). Differences between models are better judged with the paired test.
 - **Timings.** Every timing was taken on a shared machine (load average 30-77 at various points), so treat timings as indicative.
-- **Weights stay local.** On a fresh clone, Generate, Attention and `/v1` need `make smoke` or `make standard` first.
+- **Weights stay local.** On a fresh clone, Generate, Attention and `/v1` need `make reproduce-scratch` (re-trained flagship, labelled as such) or fall back to a labelled smoke checkpoint.
+- **No frontend tests.** The workbench is checked by the TypeScript build and by hand in a browser; there are no component or end-to-end tests in CI.
 
 **Next highest-value steps**
 
-1. Add more seeds for the main-track arms, so the scratch-vs-n-gram gap can be stated with a seed range as well as a bootstrap CI.
+1. Add more seeds for the main-track arms, so the scratch-vs-n-gram gap can be stated with a seed range as well as a bootstrap CI. The paired test covers data noise on fixed checkpoints, not run-to-run variance. Two more flagship seeds are about 10-15 minutes of training, and five or more seeds per digit-sum scratchpad arm about 20 minutes; both wait for the author's go-ahead because the build machine has a known memory fault under long GPU loads.
 2. Try RoPE or ALiBi:
    - in the digit-sum scratchpad track, to test whether relative positions remove the length-shift failure;
    - in serving, where the same change would let the KV cache slide.
@@ -434,7 +456,7 @@ Quality held, but decoding got slower. The fp32 baselines here were far slower t
 | `src/morrowglass/data/` | Gutenberg pipeline (split by play), synthetic digit-sum, token cache and batching |
 | `src/morrowglass/tokenizer/` | Byte and byte-level BPE behind one protocol |
 | `src/morrowglass/train/` | Trainer (`trainer.py`) and tasks (`tasks.py`: LM and digit-sum; test locked) |
-| `src/morrowglass/eval/` | bpb, bootstrap CIs, ECE (`metrics.py`); uniform, unigram and Kneser-Ney (`ngram.py`) |
+| `src/morrowglass/eval/` | bpb, bootstrap CIs, ECE (`metrics.py`); uniform, unigram and Kneser-Ney (`ngram.py`); paired byte-block comparison (`paired.py`) |
 | `src/morrowglass/experiments/` | `registry.py` (pre-registration, including `EVALUATIONS`) → `runner.py` → `analyze.py` (verdicts) → `report.py` |
 | `src/morrowglass/inference/` | `CachedDecoder`, sampling with per-token scores, attention maps (`generate.py`); latency and KV benchmarks (`bench.py`); int8 (`quant.py`) |
 | `src/morrowglass/serving/` | OpenAI-compatible `/v1` (`openai_api.py`), model backends, lm-eval runner (`harness.py`), serving report |
@@ -449,11 +471,12 @@ Quality held, but decoding got slower. The fp32 baselines here were far slower t
 | `reports/experiments/` | 12 verdicts with plots and researcher notes |
 | `reports/serving/`, `reports/lm_eval/`, `reports/hf_export/` | KV-cache and int8 records; harness results and run metadata; Hub model cards and round-trip records |
 | `reports/lora/`, `reports/baselines-*.json`, `reports/test_access_log.jsonl` | LoRA record, baseline sweeps, test-split log |
+| `reports/paired/` | Paired re-analysis record (`summary.json`) |
 | `data/sample/`, `data/manifests/` | 320 KB offline sample (used by smoke and CI); full-corpus manifest with hashes. Raw and processed text are gitignored. |
 | `docs/` | Research framing, results, serving, design and career docs (see Related); `docs/media/` screenshots and the walkthrough |
 | `resume_evidence/` | `metrics.json`: claims with status and source |
 | `scripts/` | `demo.sh`, `run_standard.sh`, `junit_summary.py`, `record_walkthrough.cjs` |
-| `tests/` | 114 pytest tests (CPU, no network) |
+| `tests/` | 128 pytest tests with #5-#7 merged (CPU, no network) |
 | `.github/workflows/ci.yml` | CI: lint, types, tests, smoke, web build |
 
 ## Testing and CI
@@ -463,14 +486,14 @@ make test        # pytest, CPU; writes reports/test_summary.json
 make ci          # ruff + mypy + pytest + smoke + web build, which is what GitHub Actions runs
 ```
 
-- **Result:** 114/114 passing. A fresh clone of `2758c42` ran `make ci` on 2026-11-09 and passed ruff, mypy, all 114 tests, smoke and the web build.
+- **Result:** 114/114 passing on `2758c42`. A fresh clone ran `make ci` on 2026-11-09 and passed ruff, mypy, all 114 tests, smoke and the web build. The audit PRs add 14 tests (8 in #5, 6 in #7), and each PR's CI passes on its own.
 - **What the tests guarantee:** the [What works today](#what-works-today) table lists them. On top of the research guarantees, they cover:
   - KV-cache equivalence;
   - `/v1` behaviour (echo logprobs = direct forward, stream = non-stream, loopback only);
   - the Hub round trip.
 - **GitHub Actions:** enabled with the author's approval on 2026-11-08 (CST).
   - `.github/workflows/ci.yml` runs on pull requests and on pushes to `main`, on Ubuntu with CPU-only torch wheels and a read-only token.
-  - Every run so far has passed, on PRs #1-#4 and on `main`.
+  - Every run so far has passed, on PRs #1-#6 and on `main`.
 
 ## Related
 

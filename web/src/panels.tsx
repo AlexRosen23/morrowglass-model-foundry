@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Component, Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, fmt, type AttentionResult, type Blueprint, type Experiment, type GenResult, type MetricRec, type RunDetail, type RunRow } from "./api";
 import { Heatmap, LineChart, Legend, PALETTE, Reliability, type Series } from "./charts";
 import { PairedNote } from "./paired";
@@ -13,6 +13,57 @@ export function ProvBadge({ p }: { p: string }) {
 
 function Source({ path }: { path: string }) {
   return <div className="source mono">source: {path}</div>;
+}
+
+/** Keeps a rendering error inside one tab instead of blanking the whole workbench. */
+export class TabBoundary extends Component<{ tab: string; children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="error">
+        The {this.props.tab} tab hit a rendering error: {this.state.error.message}.{" "}
+        <button onClick={() => this.setState({ error: null })}>Try again</button>
+      </div>
+    );
+  }
+}
+
+// ------------------------------------------------------------------ checkpoint choice (Generate, Attention, /v1)
+
+const isLeaky = (r: RunRow) => r.causal === false;
+
+export function checkpointLabel(r: RunRow): string {
+  return `${r.provenance === "smoke" ? "[smoke] " : ""}${isLeaky(r) ? "[no causal mask] " : ""}${r.checkpoint_reproduced ? "[re-trained] " : ""}${r.run_id}`;
+}
+
+/** The LM runs with a local checkpoint, and which one to use. Prefers the run selected in the ledger, then a
+ * measured run over a smoke one. Stays valid when the run list arrives after the panel mounts. */
+function useCheckpoint(runs: RunRow[], initial: string | null): [RunRow[], string, (id: string) => void] {
+  const lmRuns = useMemo(() => runs.filter((r) => r.has_checkpoint && r.task === "lm"), [runs]);
+  const pick = () => (initial && lmRuns.some((r) => r.run_id === initial) ? initial
+    : lmRuns.find((r) => r.provenance === "measured" && !isLeaky(r))?.run_id ?? lmRuns[0]?.run_id ?? "");
+  const [runId, setRunId] = useState(pick);
+  useEffect(() => {
+    if (!lmRuns.some((r) => r.run_id === runId)) setRunId(pick());
+  }, [lmRuns]); // eslint-disable-line react-hooks/exhaustive-deps
+  return [lmRuns, runId, setRunId];
+}
+
+/** Says so when the panel is not showing the run selected in the ledger, and what the shown one is. */
+function CheckpointNotice({ runs, initial, runId }: { runs: RunRow[]; initial: string | null; runId: string }) {
+  const sel = runs.find((r) => r.run_id === initial);
+  const shown = runs.find((r) => r.run_id === runId);
+  const notes: ReactNode[] = [];
+  if (sel && sel.task === "lm" && !sel.has_checkpoint && runId !== sel.run_id) {
+    notes.push(<span key="missing">The selected run <b className="mono">{sel.run_id}</b> has no checkpoint on this machine (weights are not in git).
+      {sel.name === "lm-byte-small" && sel.experiment === "scratch" && <> <code>make reproduce-scratch</code> re-trains it (~5 min) and installs the weights, labelled as re-trained.</>}</span>);
+  }
+  if (shown?.provenance === "smoke") notes.push(<span key="smoke">Showing <b className="mono">{shown.run_id}</b>, a seconds-long smoke model: its output is plumbing, not evidence.</span>);
+  if (shown && isLeaky(shown)) notes.push(<span key="leaky">This model was trained without the causal mask (Break the Model): it learned to read the next token from the input, so free-running output is meaningless.</span>);
+  if (shown?.checkpoint_reproduced) notes.push(<span key="repro">These weights were re-trained by <code>morrowglass reproduce</code> from the committed config; they are not the original run's checkpoint.</span>);
+  return notes.length ? <div className="notice">{notes}</div> : null;
 }
 
 // ------------------------------------------------------------------ blueprint (left)
@@ -100,6 +151,8 @@ export function LedgerPanel({ runs, cursor, selected, overlay, onPick, onToggle,
               <span>{r.tokenizer}</span>
               <span>{fmt.si(r.params)}p</span>
               <span>{r.task === "lm" ? `val ${fmt.n(r.val_bpb)} bpb` : `iid ${fmt.n(r.val_iid_acc)} acc`}</span>
+              {isLeaky(r) && <span className="leakmark" title="no causal mask: this windowed val metric can read the answer, so it is not a real score (Break the Model shows the leak-free number)">leaky</span>}
+              {r.checkpoint_reproduced && <span className="testmark" title="local checkpoint re-trained by `morrowglass reproduce`, not the original weights">re-trained</span>}
               <span title={r.git_dirty ? "working tree had uncommitted changes" : "clean commit"}>@{fmt.sha(r.git_commit)}{r.git_dirty ? "*" : ""}</span>
               {r.test_opened && <span className="testmark" title="locked test split opened for this run">test↗</span>}
             </div>
@@ -194,7 +247,7 @@ export function EvidencePanel({ ids, baseline }: { ids: string[]; baseline: any 
                 <span>train acc</span><b className="mono">{fmt.n(detail.summary.final.train.accuracy)}</b>
                 <span>val (iid) acc</span><b className="mono">{fmt.n(detail.summary.final.val_iid.accuracy)}</b>
                 {detail.test_eval && Object.entries(detail.test_eval.results).map(([k, v]: [string, any]) => (
-                  <><span key={k}>{k} acc</span><b className="mono">{fmt.n(v.accuracy)}</b></>
+                  <Fragment key={k}><span>{k} acc</span><b className="mono">{fmt.n(v.accuracy)}</b></Fragment>
                 ))}
               </div>
             ) : <p className="dim">No final evaluation (status {detail.summary.status}).</p>}
@@ -226,8 +279,7 @@ export function EvidencePanel({ ids, baseline }: { ids: string[]; baseline: any 
 // ------------------------------------------------------------------ generate
 
 export function GeneratePanel({ runs, initial }: { runs: RunRow[]; initial: string | null }) {
-  const lmRuns = runs.filter((r) => r.has_checkpoint && r.task === "lm");
-  const [runId, setRunId] = useState(initial && lmRuns.some((r) => r.run_id === initial) ? initial : lmRuns[0]?.run_id ?? "");
+  const [lmRuns, runId, setRunId] = useCheckpoint(runs, initial);
   const [prompt, setPrompt] = useState("ROMEO:\n");
   const [temp, setTemp] = useState(0.8);
   const [topk, setTopk] = useState(40);
@@ -238,24 +290,32 @@ export function GeneratePanel({ runs, initial }: { runs: RunRow[]; initial: stri
   const [err, setErr] = useState<string | null>(null);
   const [inspect, setInspect] = useState<number | null>(null);
   const [base, setBase] = useState<{ model: string; text: string } | "loading" | null>(null);
+  const req = useRef(0); // only the latest click may write results (an older, slower reply is dropped)
   const go = () => {
-    setBusy(true); setErr(null); setBase("loading"); setInspect(null);
+    const id = ++req.current;
+    setBusy(true); setErr(null); setRes(null); setBase("loading"); setInspect(null);
     const body = { run_id: runId, prompt, max_new_tokens: n, temperature: temp, top_k: topk, seed };
-    api.generate({ ...body, with_baseline: false }).then(setRes).catch((e) => setErr(String(e.message))).finally(() => setBusy(false));
-    api.baselineGenerate(body).then(setBase).catch((e) => setBase({ model: "baseline unavailable", text: String(e.message) }));
+    api.generate({ ...body, with_baseline: false })
+      .then((r) => { if (id === req.current) setRes(r); })
+      .catch((e) => { if (id === req.current) setErr(String(e.message)); })
+      .finally(() => { if (id === req.current) setBusy(false); });
+    api.baselineGenerate(body)
+      .then((b) => { if (id === req.current) setBase(b); })
+      .catch((e) => { if (id === req.current) setBase({ model: "baseline unavailable", text: String(e.message) }); });
   };
   if (!lmRuns.length) return <div className="empty">No local checkpoints. Run <code>make smoke</code> or an experiment first.</div>;
   return (
     <div className="generate">
       <div className="formrow">
         <label>checkpoint<select value={runId} onChange={(e) => setRunId(e.target.value)}>
-          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{r.provenance === "smoke" ? "[smoke] " : ""}{r.run_id} ({fmt.n(r.val_bpb)} bpb)</option>)}
+          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{checkpointLabel(r)} ({fmt.n(r.val_bpb)} bpb{isLeaky(r) ? ", leaky" : ""})</option>)}
         </select></label>
         <label>temperature<input type="number" step={0.1} min={0} max={2} value={temp} onChange={(e) => setTemp(+e.target.value)} /></label>
         <label>top-k<input type="number" min={1} max={1024} value={topk} onChange={(e) => setTopk(+e.target.value)} /></label>
         <label>seed<input type="number" value={seed} onChange={(e) => setSeed(+e.target.value)} /></label>
         <label>tokens<input type="number" min={1} max={400} value={n} onChange={(e) => setN(+e.target.value)} /></label>
       </div>
+      <CheckpointNotice runs={runs} initial={initial} runId={runId} />
       <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} aria-label="prompt" maxLength={500}
         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !busy && runId) { e.preventDefault(); go(); } }} />
       <button className="primary" onClick={go} disabled={busy || !runId}>{busy ? "Sampling…" : "Generate (⌘↵)"}</button>
@@ -263,7 +323,9 @@ export function GeneratePanel({ runs, initial }: { runs: RunRow[]; initial: stri
       {res && (
         <div className="grid2">
           <section className="card">
-            <h3>Transformer <ProvBadge p="live" /> <span className="dim small">{res.run_id}</span></h3>
+            <h3>Transformer <ProvBadge p="live" />{res.provenance === "smoke" && <> <ProvBadge p="smoke" /></>}
+              {res.checkpoint_origin === "reproduced" && <span className="badge prov-smoke" title="weights re-trained by morrowglass reproduce">RE-TRAINED</span>}
+              {" "}<span className="dim small">{res.run_id}</span></h3>
             <pre className="gen">
               <span className="dim">{res.prompt}</span>
               {res.tokens.map((t, i) => (
@@ -283,9 +345,9 @@ export function GeneratePanel({ runs, initial }: { runs: RunRow[]; initial: stri
           </section>
           {base && (
             <section className="card">
-              <h3>Baseline: {base === "loading" ? "fitting n-gram counts (first use can take a minute)…" : base.model} <ProvBadge p="live" /></h3>
+              <h3>Baseline: {base === "loading" ? "fitting n-gram counts (first use can take a minute)…" : base.model} <ProvBadge p="live" />{res.provenance === "smoke" && <> <ProvBadge p="smoke" /></>}</h3>
               <pre className="gen"><span className="dim">{res.prompt}</span>{base === "loading" ? "" : base.text}</pre>
-              <p className="dim small">Same prompt, seed and temperature, sampled from the count-based baseline fitted on the train split.</p>
+              <p className="dim small">Same prompt, seed and temperature, sampled from the count-based baseline fitted on the {res.provenance === "smoke" ? "offline sample's" : ""} train split.</p>
             </section>
           )}
         </div>
@@ -297,25 +359,41 @@ export function GeneratePanel({ runs, initial }: { runs: RunRow[]; initial: stri
 // ------------------------------------------------------------------ attention
 
 export function AttentionPanel({ runs, initial, layer, setLayer }: { runs: RunRow[]; initial: string | null; layer: number; setLayer: (l: number) => void }) {
-  const lmRuns = runs.filter((r) => r.has_checkpoint && r.task === "lm");
-  const [runId, setRunId] = useState(initial && lmRuns.some((r) => r.run_id === initial) ? initial : lmRuns[0]?.run_id ?? "");
+  const [lmRuns, runId, setRunId] = useCheckpoint(runs, initial);
   const [text, setText] = useState("To be, or not to be, that is the question.");
   const [res, setRes] = useState<AttentionResult | null>(null);
   const [head, setHead] = useState(0);
   const [err, setErr] = useState<string | null>(null);
-  const go = () => { setErr(null); api.attention(runId, text).then((r) => { setRes(r); if (layer >= r.n_layer) setLayer(0); }).catch((e) => setErr(String(e.message))); };
-  useEffect(() => { if (runId) go(); }, [runId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [busy, setBusy] = useState(false);
+  const req = useRef(0);
+  const go = () => {
+    if (!runId) return;
+    const id = ++req.current;
+    setErr(null); setBusy(true);
+    api.attention(runId, text).then((r) => {
+      if (id !== req.current) return;
+      // A different model can have fewer layers or heads than the one inspected before.
+      if (layer >= r.n_layer) setLayer(0);
+      setHead((h) => (h >= r.n_head ? 0 : h));
+      setRes(r);
+    }).catch((e) => { if (id === req.current) setErr(String(e.message)); }).finally(() => { if (id === req.current) setBusy(false); });
+  };
+  useEffect(() => { go(); }, [runId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const matrix = res?.attention[Math.min(layer, res.n_layer - 1)]?.[Math.min(head, res.n_head - 1)];
   if (!lmRuns.length) return <div className="empty">No local checkpoints.</div>;
   return (
     <div className="attention">
       <div className="formrow">
         <label>checkpoint<select value={runId} onChange={(e) => setRunId(e.target.value)}>
-          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{r.provenance === "smoke" ? "[smoke] " : ""}{r.run_id}</option>)}
+          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{checkpointLabel(r)}</option>)}
         </select></label>
-        <input className="grow" value={text} onChange={(e) => setText(e.target.value)} maxLength={400} aria-label="input text" />
-        <button onClick={go}>Inspect</button>
+        <input className="grow" value={text} onChange={(e) => setText(e.target.value)} maxLength={400} aria-label="input text"
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); go(); } }} />
+        <button onClick={go} disabled={busy || !runId}>{busy ? "Running…" : "Inspect"}</button>
       </div>
+      <CheckpointNotice runs={runs} initial={initial} runId={runId} />
       {err && <div className="error">{err}</div>}
+      {!res && busy && <div className="empty">Running a forward pass of {runId}…</div>}
       {res && (
         <>
           <div className="heads">
@@ -329,9 +407,9 @@ export function AttentionPanel({ runs, initial, layer, setLayer }: { runs: RunRo
               </div>
             ))}
           </div>
-          {res.attention[layer] && <Heatmap matrix={res.attention[layer][head]} labels={res.tokens} />}
+          {matrix && <Heatmap matrix={matrix} labels={res.tokens} />}
           <p className="caveat">{res.caveat}</p>
-          <Source path={`live forward pass of artifacts/checkpoints/${runId}/best.pt`} />
+          <Source path={`live forward pass of artifacts/checkpoints/${(res as AttentionResult & { run_id?: string }).run_id ?? runId}/best.pt`} />
         </>
       )}
     </div>
@@ -344,7 +422,11 @@ const VERDICT_CLASS: Record<string, string> = { supported: "ok", "partially supp
 
 export function FindingsPanel({ experiments, dataset, onShowRuns }: { experiments: Experiment[]; dataset: any; onShowRuns: (ids: string[]) => void }) {
   const [open, setOpen] = useState<string | null>(null);
-  const exps = experiments.filter((e) => !e.experiment.startsWith("break-") && !e.experiment.startsWith("digitsum"));
+  // Headline first: the pre-registered flagship question, then what explains it, then the rest.
+  const ORDER = ["scratch", "scratch-extended", "tokenization", "capacity", "optimization", "lora"];
+  const rank = (e: Experiment) => { const i = ORDER.indexOf(e.experiment); return i < 0 ? ORDER.length : i; };
+  const exps = experiments.filter((e) => !e.experiment.startsWith("break-") && !e.experiment.startsWith("digitsum"))
+    .sort((a, b) => rank(a) - rank(b) || a.experiment.localeCompare(b.experiment));
   return (
     <div className="findings">
       <p className="dim">Each experiment was registered (hypothesis + success criterion) in <code>experiments/registry.py</code> before it ran; verdicts are computed by <code>experiments/analyze.py</code> from saved run records.</p>
@@ -401,7 +483,8 @@ export function BreakPanel({ experiments, onShowRuns }: { experiments: Experimen
       <p className="dim">Controlled failures with fixed seeds. Each row follows <b>problem → hypothesis → experiment → result → decision</b>, read from the saved records.</p>
       {cases.map((e) => (
         <section className="card breakcase" key={e.experiment}>
-          <h3>{e.title} <span className={`verdict v-${VERDICT_CLASS[e.verdict] ?? "mid"}`}>{e.verdict}</span></h3>
+          <h3>{e.title} <span className={`verdict v-${VERDICT_CLASS[e.verdict] ?? "mid"}`}>{e.verdict}{caveatOf(e) ? " *" : ""}</span></h3>
+          {caveatOf(e) && <p className="caveat">* {caveatOf(e)}</p>}
           <div className="chain">
             <div><h4>What failed</h4><p>{WHAT_FAILED[e.experiment] ?? e.hypothesis}</p></div>
             <div><h4>Hypothesis</h4><p>{e.hypothesis}</p></div>
@@ -416,6 +499,12 @@ export function BreakPanel({ experiments, onShowRuns }: { experiments: Experimen
       ))}
     </div>
   );
+}
+
+/** The researcher note's "Verdict caveat:" paragraph, shown next to the badge instead of only in the note. */
+function caveatOf(e: Experiment): string | null {
+  const line = e.researcher_note?.split("\n").find((l) => l.startsWith("Verdict caveat:"));
+  return line ? line.replace("Verdict caveat:", "").trim() : null;
 }
 
 // Problem statements are fixed descriptions of the induced fault, not results.
@@ -455,6 +544,7 @@ export function JobPanel({ onDone }: { onDone: () => void }) {
         <button className="primary" disabled={job?.status === "running"} onClick={() => { setErr(null); api.startJob().then(setJob).catch((e) => setErr(String(e.message))); }}>Start smoke job</button>
         <button disabled={job?.status !== "running"} onClick={() => api.cancelJob(job.id).then(setJob)}>Cancel</button>
         {job && <span className="mono">{job.status} · {job.elapsed_s}s · {job.metrics.length} records</span>}
+        {job?.status === "running" && job.metrics.length === 0 && <span className="dim small">starting: Python start-up, then the 200-step overfit sanity check that gates every run (tens of seconds on a busy machine)</span>}
       </div>
       {err && <div className="error">{err}</div>}
       {evals.length > 0 && (
@@ -494,7 +584,7 @@ export function ServingPanel({ runs, initial }: { runs: RunRow[]; initial: strin
               return <tr key={`${d}${L}`}><td>{d}</td><td>{L} tok</td><td>{off.tokens_per_s} tok/s</td><td>{on.tokens_per_s} tok/s</td>
                 <td>{fmt.n(on.tokens_per_s / off.tokens_per_s, 2)}x</td><td>{on.decode_ms_per_token}</td></tr>;
             }))}</tbody></table>
-          <p className="dim small">Equivalence on CPU: same greedy tokens {String(k.checks.same_tokens)}, max |Δlogit| {Math.max(...k.equivalence_cpu.map((e: any) => e.max_abs_logit_diff)).toExponential(1)}. Batch 1, greedy, {k.protocol.new_tokens} new tokens, {k.threads} threads, median of {k.protocol.repeats}.</p>
+          <p className="dim small">Equivalence on CPU: same greedy tokens {String(k.checks.same_tokens)}, max |Δlogit| {k.equivalence_cpu?.length ? Math.max(...k.equivalence_cpu.map((e: any) => e.max_abs_logit_diff)).toExponential(1) : "—"}. Batch 1, greedy, {k.protocol.new_tokens} new tokens, {k.threads} threads, median of {k.protocol.repeats}.</p>
           <Source path={`reports/serving/kv-cache/${k.run_id}.json`} />
         </section>
       ))}
@@ -527,17 +617,16 @@ export function ServingPanel({ runs, initial }: { runs: RunRow[]; initial: strin
 }
 
 function OpenAITry({ runs, initial }: { runs: RunRow[]; initial: string | null }) {
-  const lmRuns = runs.filter((r) => r.has_checkpoint && r.task === "lm");
-  const [runId, setRunId] = useState(initial && lmRuns.some((r) => r.run_id === initial) ? initial : lmRuns[0]?.run_id ?? "");
+  const [lmRuns, runId, setRunId] = useCheckpoint(runs, initial);
   const [prompt, setPrompt] = useState("HAMLET.\n");
-  const [res, setRes] = useState<{ body: any; ms: number } | null>(null);
+  const [res, setRes] = useState<{ body: any; ms: number; prompt: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const body = { model: runId, prompt, max_tokens: 80, temperature: 0.8, seed: 0, stop: ["\n\n"] };
   const go = () => {
     setBusy(true); setErr(null);
     const t = performance.now();
-    api.completion(body).then((b) => setRes({ body: b, ms: performance.now() - t })).catch((e) => setErr(String(e.message))).finally(() => setBusy(false));
+    api.completion(body).then((b) => setRes({ body: b, ms: performance.now() - t, prompt })).catch((e) => setErr(String(e.message))).finally(() => setBusy(false));
   };
   if (!lmRuns.length) return null;
   return (
@@ -545,16 +634,17 @@ function OpenAITry({ runs, initial }: { runs: RunRow[]; initial: string | null }
       <h3>OpenAI-compatible API <ProvBadge p="live" /></h3>
       <div className="formrow">
         <label>model<select value={runId} onChange={(e) => setRunId(e.target.value)}>
-          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{r.run_id}</option>)}
+          {lmRuns.map((r) => <option key={r.run_id} value={r.run_id}>{checkpointLabel(r)}</option>)}
         </select></label>
         <input value={prompt} onChange={(e) => setPrompt(e.target.value)} aria-label="completion prompt" maxLength={500} />
         <button className="primary" onClick={go} disabled={busy || !runId}>{busy ? "Calling…" : "POST /v1/completions"}</button>
       </div>
-      <pre className="gen mono small">{`curl -s 127.0.0.1:5100/v1/completions -H 'Content-Type: application/json' -d '${JSON.stringify(body).replace(/'/g, "'\\''")}'`}</pre>
+      <CheckpointNotice runs={runs} initial={initial} runId={runId} />
+      <pre className="gen mono small">{`curl -s ${window.location.origin}/v1/completions -H 'Content-Type: application/json' -d '${JSON.stringify(body).replace(/'/g, "'\\''")}'`}</pre>
       {err && <div className="error">{err}</div>}
       {res && (
         <>
-          <pre className="gen"><span className="dim">{prompt}</span>{res.body.choices?.[0]?.text}</pre>
+          <pre className="gen"><span className="dim">{res.prompt}</span>{res.body.choices?.[0]?.text}</pre>
           <p className="dim small">finish_reason {res.body.choices?.[0]?.finish_reason} · {res.body.usage?.completion_tokens} tokens · {Math.round(res.ms)} ms round trip (browser-measured) · KV cache {String(res.body.morrowglass?.kv_cache)} · not instruction-tuned: this is a continuation, not an answer.</p>
         </>
       )}

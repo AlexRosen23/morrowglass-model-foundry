@@ -24,6 +24,7 @@ from morrowglass.train.trainer import (
     RUNS_DIR,
     TrainConfig,
     build_task,
+    load_checkpoint,
     load_model_from_checkpoint,
     train_from_config,
 )
@@ -31,6 +32,13 @@ from morrowglass.train.trainer import (
 REPORTS = REPO_ROOT / "reports"
 SMOKE_DIR = REPORTS / "smoke"
 TEST_LOG = REPORTS / "test_access_log.jsonl"
+# Re-runs of committed runs land here (both git-ignored), never on top of the evidence in reports/runs.
+REPRODUCE_DIR = REPORTS / "reproduce"
+REPRODUCE_CKPT = REPO_ROOT / "artifacts" / "reproduce"
+
+
+class EvidenceOverwriteError(PermissionError):
+    """Raised when a re-run would replace a committed, measured run record."""
 
 
 def runs_dir_for(profile: str) -> Path:
@@ -149,8 +157,20 @@ def estimate(exp: Experiment, device: str = "auto", probe_steps: int = 8) -> dic
 
 
 def run_experiment(name: str, profile: str = "standard", approved: bool = False, only: str | None = None,
-                   device: str = "auto", force: bool = False, quiet: bool = False) -> list[dict[str, Any]]:
+                   device: str = "auto", force: bool = False, quiet: bool = False,
+                   overwrite_evidence: bool = False) -> list[dict[str, Any]]:
     exp = build(name, profile)
+    runs_dir = runs_dir_for(profile)
+    if force and profile != "smoke" and not overwrite_evidence:
+        # The run id is a hash of the config, so --force would re-train into the committed run's own directory,
+        # replace its summary/metrics, and leave any locked-test result attached to different weights.
+        existing = [a.run_id for a in exp.arms if (not only or only in a.name)
+                    and (runs_dir / a.run_id / "summary.json").exists()]
+        if existing:
+            raise EvidenceOverwriteError(
+                f"--force would overwrite committed run record(s) {', '.join(existing)}. "
+                "Use `morrowglass reproduce RUN_ID` to re-train into reports/reproduce/ and compare, "
+                "or pass --overwrite-evidence if replacing the evidence is really intended.")
     if profile == "extended" and not approved:
         est = estimate(exp, device)
         raise PermissionError(
@@ -160,7 +180,6 @@ def run_experiment(name: str, profile: str = "standard", approved: bool = False,
     sanity = overfit_sanity()
     if not sanity["passed"]:
         raise RuntimeError(f"overfit sanity check failed: {sanity}")
-    runs_dir = runs_dir_for(profile)
     ckpt_root = CHECKPOINT_ROOT if profile != "smoke" else SMOKE_DIR / "checkpoints"
     summaries = []
     for arm in exp.arms:
@@ -180,6 +199,71 @@ def run_experiment(name: str, profile: str = "standard", approved: bool = False,
         summaries.append(train_from_config(arm, quiet=quiet, runs_dir=runs_dir, ckpt_root=ckpt_root))
     write_json(experiments_dir_for(profile) / name / "sanity.json", sanity)
     return summaries
+
+
+def reproduce_run(run_id: str, device: str = "auto", quiet: bool = False, runs_dir: Path = RUNS_DIR,
+                  out_dir: Path = REPRODUCE_DIR, ckpt_root: Path = REPRODUCE_CKPT,
+                  install_into: Path | None = CHECKPOINT_ROOT) -> dict[str, Any]:
+    """Re-train a committed run from its saved config into ``out_dir`` and compare with the committed record.
+
+    The committed run directory is only read. The verdict is whether the reproduced validation bits-per-byte
+    falls inside the committed run's 95% bootstrap interval (MPS kernels are not bit-deterministic).
+
+    Weights are not in git, so a fresh clone cannot sample the committed models. When the reproduction passes
+    and ``install_into`` has no checkpoint for this run, the re-trained best checkpoint is copied there with a
+    ``REPRODUCED.json`` marker; the API then labels everything served from it as re-trained weights. An
+    existing (original) checkpoint is never replaced.
+    """
+    committed_dir = runs_dir / run_id
+    if not (committed_dir / "summary.json").exists():
+        raise KeyError(f"no committed run {run_id!r} in {committed_dir.parent}")
+    cfg = TrainConfig.from_dict(read_json(committed_dir / "config.json")["train"])
+    if cfg.run_id != run_id:
+        raise RuntimeError(f"saved config hashes to {cfg.run_id}, not {run_id}: the config schema has changed")
+    cfg.device = device
+    sanity = overfit_sanity()
+    if not sanity["passed"]:
+        raise RuntimeError(f"overfit sanity check failed: {sanity}")
+    summary = train_from_config(cfg, quiet=quiet, runs_dir=out_dir / "runs", ckpt_root=ckpt_root)
+    old = read_json(committed_dir / "summary.json")
+    report: dict[str, Any] = {
+        "run_id": run_id, "reproduced": now_iso(), "git": git_provenance(), "device": resolve_device(device),
+        "committed": {"source": str(committed_dir.relative_to(REPO_ROOT)) if committed_dir.is_relative_to(REPO_ROOT)
+                      else str(committed_dir), "status": old["status"], "best_step": old.get("best_step")},
+        "reproduced_run": {"source": str(out_dir / "runs" / run_id), "status": summary["status"],
+                           "best_step": summary.get("best_step"), "wall_time_s": summary["wall_time_s"]},
+    }
+    if cfg.task == "lm":
+        a, b = old["final"]["val"], summary["final"]["val"]
+        lo, hi = a["bits_per_byte_ci95"]
+        report["val_bpb"] = {"committed": a["bits_per_byte"], "committed_ci95": [lo, hi],
+                             "reproduced": b["bits_per_byte"], "reproduced_ci95": b.get("bits_per_byte_ci95"),
+                             "difference": b["bits_per_byte"] - a["bits_per_byte"]}
+        report["verdict"] = "reproduced" if lo <= b["bits_per_byte"] <= hi else "not reproduced"
+        report["criterion"] = "reproduced val bpb inside the committed run's 95% bootstrap interval"
+    else:
+        a_acc, b_acc = old["final"]["val_iid"]["accuracy"], summary["final"]["val_iid"]["accuracy"]
+        report["val_iid_accuracy"] = {"committed": a_acc, "reproduced": b_acc, "difference": b_acc - a_acc}
+        report["verdict"] = "reproduced" if abs(b_acc - a_acc) <= 0.02 else "not reproduced"
+        report["criterion"] = "|reproduced - committed| val_iid accuracy <= 0.02"
+    report["installed_checkpoint"] = None
+    target = install_into / run_id if install_into is not None else None
+    if target is not None and report["verdict"] == "reproduced" and not (target / "best.pt").exists():
+        import shutil
+
+        target.mkdir(parents=True, exist_ok=True)
+        for name in ("best.pt", "best.sha256.json"):
+            shutil.copyfile(ckpt_root / run_id / name, target / name)
+        load_checkpoint(target / "best.pt")  # verify the copy against its recorded hash
+        marker = {"run_id": run_id, "origin": "reproduced", "reproduced": report["reproduced"],
+                  "device": report["device"], "git": report["git"]["commit"],
+                  "note": "Re-trained from the committed config; not the original checkpoint. Its metrics are in "
+                          f"reports/reproduce/{run_id}.json; the committed record describes the original run.",
+                  **({"val_bpb": report["val_bpb"]} if "val_bpb" in report else {})}
+        write_json(target / "REPRODUCED.json", marker)
+        report["installed_checkpoint"] = str(target)
+    write_json(out_dir / f"{run_id}.json", report)
+    return report
 
 
 # ------------------------------------------------------------------ leak-free scoring

@@ -45,7 +45,8 @@ class Store:
         self.sources = sources or SOURCES
         self.index_path = index_path
         self.experiments_dir = experiments_dir
-        self._models: OrderedDict[str, tuple[MorrowglassLM, Tokenizer]] = OrderedDict()
+        # Keyed by (run_id, checkpoint mtime): a re-trained checkpoint (e.g. a UI smoke job) is reloaded.
+        self._models: OrderedDict[tuple[str, int], tuple[MorrowglassLM, Tokenizer]] = OrderedDict()
         self._baselines: dict[tuple[str, str], Any] = {}
         self._lock = threading.Lock()
 
@@ -78,6 +79,9 @@ class Store:
                     "git_commit": m["git"]["commit"], "git_dirty": m["git"]["dirty"], "device": m["device"],
                     "started": m["started"], "finished": s.get("finished"),
                     "has_checkpoint": (cdir / d.name / "best.pt").exists(),
+                    "checkpoint_reproduced": (cdir / d.name / "REPRODUCED.json").exists(),
+                    # Without the causal mask the windowed val metric is leaky (the model can read the answer).
+                    "causal": bool(c.get("model", {}).get("causal", True)),
                     "test_opened": (d / "test_eval.json").exists(),
                 })
         return sorted(out, key=lambda r: r["started"])
@@ -89,7 +93,13 @@ class Store:
             p = rd / f"{name}.json"
             rec[name] = read_json(p) if p.exists() else None
         rec["has_checkpoint"] = (cd / "best.pt").exists()
+        rec["checkpoint_origin"] = self.checkpoint_origin(run_id) if rec["has_checkpoint"] else None
         return rec
+
+    def checkpoint_origin(self, run_id: str) -> str:
+        """'original' for the checkpoint the run produced, 'reproduced' for one re-trained by `reproduce`."""
+        _, _, cd = self._locate(run_id)
+        return "reproduced" if (cd / "REPRODUCED.json").exists() else "original"
 
     def metrics(self, run_id: str) -> list[dict[str, Any]]:
         _, rd, _ = self._locate(run_id)
@@ -103,7 +113,8 @@ class Store:
         con = sqlite3.connect(tmp)
         cols = ["run_id", "provenance", "experiment", "name", "status", "task", "tokenizer", "dataset", "seed",
                 "params", "steps", "tokens_seen", "wall_time_s", "val_bpb", "val_iid_acc", "git_commit",
-                "git_dirty", "device", "started", "finished", "has_checkpoint", "test_opened"]
+                "git_dirty", "device", "started", "finished", "has_checkpoint", "checkpoint_reproduced", "causal",
+                "test_opened"]
         con.execute(f"CREATE TABLE runs ({', '.join(cols)}, PRIMARY KEY(run_id, provenance))")
         con.executemany(f"INSERT INTO runs VALUES ({', '.join('?' * len(cols))})",
                         [tuple(r[c] for c in cols) for r in runs])
@@ -153,28 +164,44 @@ class Store:
         from morrowglass.train.trainer import load_model_from_checkpoint
 
         with self._lock:
-            if run_id in self._models:
-                self._models.move_to_end(run_id)
-                return self._models[run_id]
             _, rd, cd = self._locate(run_id)
             ck = cd / "best.pt"
             if not ck.exists():
                 raise FileNotFoundError(f"no local checkpoint for {run_id} (checkpoints are not in git; "
                                         "re-run the experiment to recreate it)")
+            key = (run_id, ck.stat().st_mtime_ns)
+            if key in self._models:
+                self._models.move_to_end(key)
+                return self._models[key]
+            for stale in [k for k in self._models if k[0] == run_id]:
+                del self._models[stale]
             model, state = load_model_from_checkpoint(ck)
             cfg = read_json(rd / "config.json")["train"]
             tok = get_tokenizer(state["tokenizer"], cfg["dataset"] if cfg["task"] == "lm" else "shakespeare-sample")
             if tok.fingerprint() != state["tokenizer_sha256"]:
                 raise RuntimeError(f"tokenizer for {run_id} does not match the one it was trained with")
-            self._models[run_id] = (model, tok)
+            self._models[key] = (model, tok)
             while len(self._models) > 3:
                 self._models.popitem(last=False)
             return model, tok
 
+    def checkpoint_stamp(self, run_id: str) -> int | None:
+        """mtime of the run's best checkpoint (None when absent); changes when the run is re-trained."""
+        _, _, cd = self._locate(run_id)
+        ck = cd / "best.pt"
+        return ck.stat().st_mtime_ns if ck.exists() else None
+
     def baseline_model(self, dataset: str, tokenizer: str) -> Any:
         """Best-on-validation Kneser-Ney order for this tokenizer, fitted on train (cached)."""
+        from morrowglass.data.corpus import dataset_dir
         from morrowglass.data.loader import encode_split
         from morrowglass.eval.ngram import KneserNey
+
+        if not (dataset_dir(dataset) / "train.txt").exists():
+            hint = "run `make data` (downloads the 5.6 MB Project Gutenberg file)" if dataset == "shakespeare" else \
+                "the sample should be in git"
+            raise FileNotFoundError(f"the {dataset} train split is not on this machine, so the n-gram baseline "
+                                    f"cannot be fitted: {hint}")
 
         key = (dataset, tokenizer)
         with self._lock:

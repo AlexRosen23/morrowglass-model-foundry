@@ -198,7 +198,7 @@ def test_serving_records_endpoint_matches_files(client: TestClient) -> None:
     from morrowglass.repro import REPO_ROOT, read_json
 
     body = client.get("/api/serving").json()
-    assert set(body["registered"]) == {"kv-cache", "lm-eval-harness", "int8-dynamic"}
+    assert set(body["registered"]) == {"kv-cache", "lm-eval-harness", "int8-dynamic", "paired-baseline"}
     for rid, rec in body["kv_cache"].items():
         assert rec == read_json(REPO_ROOT / "reports" / "serving" / "kv-cache" / f"{rid}.json")
         assert rec["provenance"] == "measured" and rec["verdict"] in ("supported", "not supported")

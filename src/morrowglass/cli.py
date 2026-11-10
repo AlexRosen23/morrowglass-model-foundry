@@ -54,8 +54,14 @@ def main(argv: list[str] | None = None) -> int:
         if name == "run":
             p.add_argument("--approved", action="store_true", help="owner approved an extended run")
             p.add_argument("--only", default=None, help="substring filter on arm names")
-            p.add_argument("--force", action="store_true")
+            p.add_argument("--force", action="store_true", help="re-train even if the run record exists")
+            p.add_argument("--overwrite-evidence", action="store_true",
+                           help="with --force on standard/extended: really replace the committed run record")
             p.add_argument("--quiet", action="store_true")
+    rp = sub.add_parser("reproduce", help="re-train a committed run into reports/reproduce/ and compare")
+    rp.add_argument("run_id")
+    rp.add_argument("--device", default="auto")
+    rp.add_argument("--quiet", action="store_true")
     a = sub.add_parser("analyze")
     a.add_argument("experiment", nargs="?", default="all")
     a.add_argument("--profile", default="standard")
@@ -89,6 +95,9 @@ def main(argv: list[str] | None = None) -> int:
     le.add_argument("--limit", type=int, default=None, help="docs per task; plumbing check only (artifacts/)")
     le.add_argument("--port", type=int, default=5102)
     le.add_argument("--summarize-only", action="store_true")
+    pa = sub.add_parser("paired", help="paired block-bootstrap vs the best n-gram (EVALUATIONS['paired-baseline'])")
+    pa.add_argument("--device", default="cpu")
+    pa.add_argument("--report-only", action="store_true", help="rewrite docs/PAIRED_RESULTS.md from the record")
     sub.add_parser("serving-report", help="docs/SERVING_RESULTS.md from the saved serving/eval records")
     sub.add_parser("ledger")
     sub.add_parser("report")
@@ -114,7 +123,15 @@ def main(argv: list[str] | None = None) -> int:
             corpus.fetch_raw()
         m = corpus.prepare()
         corpus.MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(corpus.PROCESSED_DIR / "manifest.json", corpus.MANIFEST_DIR / "shakespeare.json")
+        committed = corpus.MANIFEST_DIR / "shakespeare.json"
+        same = committed.exists() and corpus.same_manifest(json.loads(committed.read_text()), m)
+        if same:
+            print(f"splits match the committed manifest ({committed.name}); left unchanged")
+        else:
+            if committed.exists():
+                print(f"WARNING: rebuilt splits differ from the committed {committed.name}; it has been replaced. "
+                      "Run records made with the old splits are no longer comparable.", file=sys.stderr)
+            shutil.copyfile(corpus.PROCESSED_DIR / "manifest.json", committed)
         corpus.make_sample()
         _print({k: {"bytes": v["bytes"], "works": len(v["works"])} for k, v in m["files"].items()})
     elif args.cmd == "sanity":
@@ -140,12 +157,18 @@ def main(argv: list[str] | None = None) -> int:
 
         try:
             sums = run_experiment(args.experiment, args.profile, args.approved, args.only, args.device,
-                                  args.force, args.quiet)
+                                  args.force, args.quiet, args.overwrite_evidence)
         except PermissionError as e:
             print(f"BLOCKED: {e}", file=sys.stderr)
             return 3
         for s in sums:
             print(f"{s['run_id']}: {s['status']} ({s['wall_time_s']}s)")
+    elif args.cmd == "reproduce":
+        from morrowglass.experiments.runner import reproduce_run
+
+        r = reproduce_run(args.run_id, args.device, args.quiet)
+        _print({k: r[k] for k in r if k in ("run_id", "val_bpb", "val_iid_accuracy", "verdict", "criterion")})
+        print(f"report: reports/reproduce/{args.run_id}.json (the committed record was not modified)")
     elif args.cmd == "analyze":
         from morrowglass.experiments.analyze import analyze_all
 
@@ -209,6 +232,17 @@ def main(argv: list[str] | None = None) -> int:
         if not args.limit:
             s = summarize()
             _print({k: s[k] for k in ("checks", "verdict", "missing")})
+    elif args.cmd == "paired":
+        from morrowglass.eval.paired import paired_report_md, run_paired_study
+        from morrowglass.repro import REPO_ROOT, read_json
+
+        if args.report_only:
+            s = read_json(REPO_ROOT / "reports" / "paired" / "summary.json")
+            (REPO_ROOT / "docs" / "PAIRED_RESULTS.md").write_text(paired_report_md(s))
+        else:
+            s = run_paired_study(args.device)
+        _print({"verdict": s["verdict"], "checks": s["checks"],
+                "flagship": s["runs"][s["primary_run"]]["paired"][str(s["protocol"]["primary_block_bytes"])]})
     elif args.cmd == "serving-report":
         from morrowglass.serving.report import build_serving_report
 

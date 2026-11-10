@@ -63,8 +63,14 @@ violence and prejudice, and samples can reproduce that language.
 ## Reproduce
 
 ```bash
-make data && uv run morrowglass run scratch --profile standard --force
+make reproduce-scratch   # = make data, then: uv run morrowglass reproduce lm-byte-small-2822813d-s0
 ```
 
+This re-trains the flagship from its saved config into `reports/reproduce/` (git-ignored) and writes a
+comparison with the committed run to `reports/reproduce/<run_id>.json`. The committed record is only read.
 The run id is deterministic in the config. MPS kernels are not bit-deterministic, so expect small
-differences in the last digits.
+differences in the last digits; the check passes when the reproduced validation bits-per-byte falls inside
+the committed run's 95% interval. If it passes and this machine has no checkpoint for the run (weights are
+not in git), the re-trained checkpoint is installed under `artifacts/checkpoints/<run_id>/` with a
+`REPRODUCED.json` marker, so the workbench and `/v1` can sample it. Everything served from it is labelled as
+re-trained weights. An existing original checkpoint is never replaced.

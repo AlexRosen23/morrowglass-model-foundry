@@ -239,3 +239,8 @@ def dataset_hash(name: str) -> str:
 
     m = json.loads((dataset_dir(name) / "manifest.json").read_text())
     return sha256_bytes("|".join(f"{k}:{v['sha256']}" for k, v in sorted(m["files"].items())).encode())
+
+
+def same_manifest(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    """True when two manifests describe identical data (everything but the build timestamp)."""
+    return {k: v for k, v in a.items() if k != "created"} == {k: v for k, v in b.items() if k != "created"}

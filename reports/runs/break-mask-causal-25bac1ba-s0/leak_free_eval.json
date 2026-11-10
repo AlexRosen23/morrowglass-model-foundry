@@ -1,0 +1,16 @@
+{
+  "checkpoint_sha256": "45794459f80cc196572cc8174020281ce37b543f8474a89756d31d465bbb645e",
+  "git": {
+    "branch": "fix/report-without-weights",
+    "commit": "513f95807e5b8b28f05e8729139636251f2fa07d",
+    "dirty": true
+  },
+  "measured": "2026-11-10T07:10:18+00:00",
+  "result": {
+    "bits_per_byte": 3.5706421844289613,
+    "positions": 2048,
+    "run_id": "break-mask-causal-25bac1ba-s0",
+    "seed": 0,
+    "split": "val"
+  }
+}

@@ -97,7 +97,9 @@ export function Legend({ series }: { series: Series[] }) {
 export function Heatmap({ matrix, labels, size = 360 }: { matrix: number[][]; labels: string[]; size?: number }) {
   const n = matrix.length;
   const cell = size / Math.max(n, 1);
-  const [hv, setHv] = useState<[number, number] | null>(null);
+  const [hover, setHv] = useState<[number, number] | null>(null);
+  // A new matrix (other model or text) can be smaller than the one the last hover came from.
+  const hv = hover && hover[0] < n && hover[1] < n ? hover : null;
   const show = (t: string) => JSON.stringify(t).slice(1, -1);
   return (
     <div className="heatwrap">

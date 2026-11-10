@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type Experiment, type RunRow } from "./api";
-import { AttentionPanel, BlueprintPanel, BreakPanel, EvidencePanel, FindingsPanel, GeneratePanel, JobPanel, LedgerPanel, ProvBadge, ServingPanel } from "./panels";
+import { AttentionPanel, BlueprintPanel, BreakPanel, EvidencePanel, FindingsPanel, GeneratePanel, JobPanel, LedgerPanel, ProvBadge, ServingPanel, TabBoundary } from "./panels";
 
 const TABS = ["Evidence", "Findings", "Break the Model", "Generate", "Attention", "Serving", "Jobs"] as const;
 type Tab = (typeof TABS)[number];
@@ -58,10 +58,17 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Never shadow browser/OS shortcuts (⌘C copy, ⌘T new tab, ⌘1 tab switch …).
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement;
-      if (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)) return;
-      if (e.key === "j" || e.key === "ArrowDown") { setCursor((c) => Math.min(c + 1, visible.length - 1)); e.preventDefault(); }
-      else if (e.key === "k" || e.key === "ArrowUp") { setCursor((c) => Math.max(c - 1, 0)); e.preventDefault(); }
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable) return;
+      // A focused button, link or <summary> keeps its own Enter/Space; arrow keys move the ledger only
+      // when focus is inside it, so they still scroll the page everywhere else.
+      const onControl = ["BUTTON", "A", "SUMMARY"].includes(t.tagName);
+      const inLedger = !!t.closest?.(".ledger");
+      if (e.key === "j" || (e.key === "ArrowDown" && inLedger)) { setCursor((c) => Math.min(c + 1, visible.length - 1)); e.preventDefault(); }
+      else if (e.key === "k" || (e.key === "ArrowUp" && inLedger)) { setCursor((c) => Math.max(c - 1, 0)); e.preventDefault(); }
+      else if (onControl && (e.key === "Enter" || e.key === " ")) return;
       else if (e.key === "Enter" && visible[cursor]) setSelected(visible[cursor].run_id);
       else if (e.key === " " && visible[cursor]) { toggle(visible[cursor].run_id); e.preventDefault(); }
       else if (e.key === "c") setOverlay([]);
@@ -112,6 +119,7 @@ export default function App() {
             ))}
           </div>
           <div className="tabbody">
+            <TabBoundary key={tab} tab={tab}>
             {tab === "Evidence" && <EvidencePanel ids={ids} baseline={baseline} />}
             {tab === "Findings" && <FindingsPanel experiments={experiments} dataset={dataset} onShowRuns={showRuns} />}
             {tab === "Break the Model" && <BreakPanel experiments={experiments} onShowRuns={showRuns} />}
@@ -119,6 +127,7 @@ export default function App() {
             {tab === "Attention" && <AttentionPanel runs={runs} initial={selected} layer={layer} setLayer={setLayer} />}
             {tab === "Serving" && <ServingPanel runs={runs} initial={selected} />}
             {tab === "Jobs" && <JobPanel onDone={load} />}
+            </TabBoundary>
           </div>
         </section>
         <aside className={`panel right ${pane === "ledger" ? "show" : ""}`} aria-label="experiment ledger">
@@ -132,7 +141,7 @@ export default function App() {
           <div className="card" onClick={(e) => e.stopPropagation()}>
             <h3>Keyboard</h3>
             <table className="tbl mono"><tbody>
-              <tr><td>j / k, ↓ / ↑</td><td>move in the ledger</td></tr>
+              <tr><td>j / k (↓ / ↑ in the ledger)</td><td>move in the ledger</td></tr>
               <tr><td>Enter</td><td>select run (blueprint + details)</td></tr>
               <tr><td>Space</td><td>add / remove run from the curve overlay</td></tr>
               <tr><td>c</td><td>clear overlay</td></tr>

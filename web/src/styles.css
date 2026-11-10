@@ -152,6 +152,8 @@ pre.gen { white-space: pre-wrap; font: 12.5px/1.55 var(--mono); margin: 0; max-h
 .heatmap { width: 360px; max-width: 100%; border: 1px solid var(--line); background: var(--panel); }
 .heatinfo { flex: 1; min-width: 200px; font-size: 12px; color: var(--ink-2); }
 .caveat { border-left: 3px solid var(--warn); padding: 6px 10px; background: var(--panel-2); font-size: 12px; }
+.paired { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--ok); background: var(--panel-2); }
+.paired h4 { margin: 0 0 6px; }
 
 /* findings + break */
 .findhead { width: 100%; display: flex; gap: 10px; align-items: center; border: none; background: transparent; padding: 0; text-align: left; }
@@ -189,6 +191,3 @@ pre.gen { white-space: pre-wrap; font: 12.5px/1.55 var(--mono); margin: 0; max-h
   .grid2, .chain { grid-template-columns: 1fr; }
   .findbody dl { grid-template-columns: 1fr; }
 }
-
-.paired { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--ok, #1f9d74); background: var(--panel-2, transparent); }
-.paired h4 { margin: 0 0 6px; }

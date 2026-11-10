@@ -254,6 +254,17 @@ def serving() -> dict[str, Any]:
     }
 
 
+@app.get("/api/paired")
+def paired() -> dict[str, Any]:
+    """Paired re-analysis of the scratch models vs the best n-gram (EVALUATIONS['paired-baseline'])."""
+    from morrowglass.repro import read_json
+
+    p = REPO_ROOT / "reports" / "paired" / "summary.json"
+    if not p.exists():
+        raise HTTPException(404, "not measured yet: run `make paired`")
+    return {**read_json(p), "source": "reports/paired/summary.json", "report": "docs/PAIRED_RESULTS.md"}
+
+
 @app.get("/api/report", response_class=PlainTextResponse)
 def report() -> str:
     p = REPO_ROOT / "docs" / "EXPERIMENT_REPORT.md"

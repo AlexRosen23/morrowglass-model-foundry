@@ -1,0 +1,404 @@
+{
+  "baseline": {
+    "matches_record": true,
+    "model": {
+      "model": "kneser-ney-4",
+      "order": 4,
+      "tokenizer": "bpe1024"
+    },
+    "recorded_val_bpb": 2.106995415066531,
+    "recorded_val_bpb_ci95": [
+      2.0946004846144484,
+      2.1199446199644223
+    ],
+    "val_bpb": 2.106995415066531
+  },
+  "caveats": [
+    "Post-hoc: registered after the unpaired verdict was known. The pre-registered verdict stays 'not supported'; this answers a better-posed question, it does not overturn the first one.",
+    "Blocks inside a play are still correlated (dialogue, recurring names); 8 KiB blocks reduce that, they do not remove it. Three plays give a sign per play, not an interval.",
+    "One seed per model: this says nothing about run-to-run variance, which a paired test on fixed checkpoints cannot see."
+  ],
+  "checks": {
+    "negative_in_every_play": true,
+    "paired_upper_below_0": true,
+    "scores_match_records": true
+  },
+  "criterion": "Flagship: upper end of the paired 95% interval (contiguous 8 KiB byte blocks, 2,000 resamples, seed 0) < 0 AND per-play difference < 0 for all 3 validation plays. The extended, BPE-small and medium runs are reported the same way without a criterion, and 256-byte blocks are reported for comparison with the original per-window interval.",
+  "device": "cpu",
+  "evaluation": "paired-baseline",
+  "git": {
+    "branch": "feat/paired-baseline-test",
+    "commit": "34347739bc3324a4e497fdb0f6baba8086695cf8",
+    "dirty": false
+  },
+  "hypothesis": "Registered after the scratch verdict ('not supported': overlapping intervals) was known, so this is a post-hoc analysis and it does not change that verdict. Prediction: on the same validation bytes, bpb(flagship) - bpb(KN-4) is negative, its paired 95% block-bootstrap interval (8 KiB blocks) lies entirely below zero, and the difference is negative in each of the three validation plays.",
+  "measured": "2026-11-09T23:54:33+00:00",
+  "plays": [
+    {
+      "start_byte": 0,
+      "title": "AS YOU LIKE IT"
+    },
+    {
+      "start_byte": 127095,
+      "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK"
+    },
+    {
+      "start_byte": 305163,
+      "title": "THE TRAGEDY OF TITUS ANDRONICUS"
+    }
+  ],
+  "preregistered_scratch_verdict_unchanged": "not supported (non-overlapping intervals required)",
+  "primary_run": "lm-byte-small-2822813d-s0",
+  "protocol": {
+    "alignment": "each token's bits go to the block that holds its last byte; blocks are contiguous byte ranges of the validation text, identical for every tokenizer",
+    "baseline": "Kneser-Ney order selected on validation in reports/baselines-shakespeare.json, fitted on train, scoring every token after the first with its n-1 token history",
+    "block_bytes": [
+      8192,
+      256
+    ],
+    "device": "cpu",
+    "plays": "boundaries found from the manifest's validation work titles",
+    "primary_block_bytes": 8192,
+    "resamples": 2000,
+    "seed": 0,
+    "split": "validation only (the locked test split stays closed)",
+    "statistic": "sum(bits_A)/sum(bytes_A) - sum(bits_B)/sum(bytes_B) over resampled blocks; the same block indices are drawn for both models",
+    "transformer_scoring": "the project's own non-overlapping block_size windows (as in summary.json); the per-token total must match the run's recorded val bpb within 1e-3"
+  },
+  "question": "The pre-registered scratch verdict compared two independent 95% intervals. Both models are scored on the same validation bytes, so their errors are correlated and an unpaired comparison is conservative. Does a paired test separate the flagship from the best n-gram (Kneser-Ney 4-gram on BPE-1024), and does the ordering hold in each of the three validation plays?",
+  "registered": "2026-11-09",
+  "runs": {
+    "lm-bpe1024-small-eb29b8fb-s0": {
+      "matches_record": true,
+      "paired": {
+        "256": {
+          "blocks": 1663,
+          "blocks_where_a_is_lower": 1413,
+          "ci95": [
+            -0.10493287513128582,
+            -0.09478585010001335
+          ],
+          "difference": -0.0998785633066972,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        },
+        "8192": {
+          "blocks": 52,
+          "blocks_where_a_is_lower": 52,
+          "ci95": [
+            -0.10790330527495583,
+            -0.09184278450198502
+          ],
+          "difference": -0.09987856330669675,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        }
+      },
+      "params": 2016960,
+      "plays": [
+        {
+          "baseline_bpb": 2.0876557864682264,
+          "bytes": 127094,
+          "difference": -0.10459004011440975,
+          "model_bpb": 1.9830657463538166,
+          "title": "AS YOU LIKE IT"
+        },
+        {
+          "baseline_bpb": 2.167571631399675,
+          "bytes": 178068,
+          "difference": -0.09191793882470822,
+          "model_bpb": 2.0756536925749667,
+          "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK"
+        },
+        {
+          "baseline_bpb": 2.0378835918061324,
+          "bytes": 120511,
+          "difference": -0.10667239994287847,
+          "model_bpb": 1.931211191863254,
+          "title": "THE TRAGEDY OF TITUS ANDRONICUS"
+        }
+      ],
+      "recorded_val_bpb": 2.007116951404068,
+      "recorded_val_bpb_ci95": [
+        1.9930097470460664,
+        2.021355855225041
+      ],
+      "tokenizer": "bpe1024",
+      "unpaired": {
+        "256": {
+          "baseline_ci95": [
+            2.0962899574777327,
+            2.1187580004074573
+          ],
+          "model_ci95": [
+            1.995454621732798,
+            2.020291667884432
+          ]
+        },
+        "8192": {
+          "baseline_ci95": [
+            2.082745928009695,
+            2.132453299334941
+          ],
+          "model_ci95": [
+            1.9794193017091168,
+            2.035656555658364
+          ]
+        }
+      },
+      "val_bpb": 2.0071168517598337
+    },
+    "lm-byte-medium-b01e2a16-s0": {
+      "matches_record": true,
+      "paired": {
+        "256": {
+          "blocks": 1663,
+          "blocks_where_a_is_lower": 1265,
+          "ci95": [
+            -0.07563998624334085,
+            -0.06480724877715438
+          ],
+          "difference": -0.07030713530818078,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        },
+        "8192": {
+          "blocks": 52,
+          "blocks_where_a_is_lower": 48,
+          "ci95": [
+            -0.08113109169714462,
+            -0.059744430705685504
+          ],
+          "difference": -0.07030713530818034,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        }
+      },
+      "params": 4852992,
+      "plays": [
+        {
+          "baseline_bpb": 2.0876557864682264,
+          "bytes": 127094,
+          "difference": -0.0647445538423419,
+          "model_bpb": 2.0229112326258845,
+          "title": "AS YOU LIKE IT"
+        },
+        {
+          "baseline_bpb": 2.167571631399675,
+          "bytes": 178068,
+          "difference": -0.0783983806713544,
+          "model_bpb": 2.0891732507283205,
+          "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK"
+        },
+        {
+          "baseline_bpb": 2.0378835918061324,
+          "bytes": 120511,
+          "difference": -0.06421788909408166,
+          "model_bpb": 1.9736657027120508,
+          "title": "THE TRAGEDY OF TITUS ANDRONICUS"
+        }
+      ],
+      "recorded_val_bpb": 2.0366883188539697,
+      "recorded_val_bpb_ci95": [
+        2.025035740164238,
+        2.0478577163596445
+      ],
+      "tokenizer": "byte",
+      "unpaired": {
+        "256": {
+          "baseline_ci95": [
+            2.0962899574777327,
+            2.1187580004074573
+          ],
+          "model_ci95": [
+            2.025460006778888,
+            2.0484342316852
+          ]
+        },
+        "8192": {
+          "baseline_ci95": [
+            2.082745928009695,
+            2.132453299334941
+          ],
+          "model_ci95": [
+            2.014557550166744,
+            2.060508839407064
+          ]
+        }
+      },
+      "val_bpb": 2.03668827975835
+    },
+    "lm-byte-small-240f8c28-s0": {
+      "matches_record": true,
+      "paired": {
+        "256": {
+          "blocks": 1663,
+          "blocks_where_a_is_lower": 1410,
+          "ci95": [
+            -0.119760341273124,
+            -0.1075113882321504
+          ],
+          "difference": -0.11368251660391482,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        },
+        "8192": {
+          "blocks": 52,
+          "blocks_where_a_is_lower": 51,
+          "ci95": [
+            -0.12441617100923867,
+            -0.10194651688404677
+          ],
+          "difference": -0.11368251660391393,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        }
+      },
+      "params": 1869504,
+      "plays": [
+        {
+          "baseline_bpb": 2.0876557864682264,
+          "bytes": 127094,
+          "difference": -0.14737019797461404,
+          "model_bpb": 1.9402855884936123,
+          "title": "AS YOU LIKE IT"
+        },
+        {
+          "baseline_bpb": 2.167571631399675,
+          "bytes": 178068,
+          "difference": -0.0884569746297954,
+          "model_bpb": 2.0791146567698795,
+          "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK"
+        },
+        {
+          "baseline_bpb": 2.0378835918061324,
+          "bytes": 120511,
+          "difference": -0.11542808034601859,
+          "model_bpb": 1.9224555114601138,
+          "title": "THE TRAGEDY OF TITUS ANDRONICUS"
+        }
+      ],
+      "recorded_val_bpb": 1.99331295184674,
+      "recorded_val_bpb_ci95": [
+        1.9806035786253398,
+        2.0063819933459257
+      ],
+      "tokenizer": "byte",
+      "unpaired": {
+        "256": {
+          "baseline_ci95": [
+            2.0962899574777327,
+            2.1187580004074573
+          ],
+          "model_ci95": [
+            1.9806440820630031,
+            2.0062302209781415
+          ]
+        },
+        "8192": {
+          "baseline_ci95": [
+            2.082745928009695,
+            2.132453299334941
+          ],
+          "model_ci95": [
+            1.9662596193648707,
+            2.022942031186834
+          ]
+        }
+      },
+      "val_bpb": 1.993312898462616
+    },
+    "lm-byte-small-2822813d-s0": {
+      "matches_record": true,
+      "paired": {
+        "256": {
+          "blocks": 1663,
+          "blocks_where_a_is_lower": 966,
+          "ci95": [
+            -0.026386910471281066,
+            -0.015636140433009784
+          ],
+          "difference": -0.021152557392190907,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        },
+        "8192": {
+          "blocks": 52,
+          "blocks_where_a_is_lower": 40,
+          "ci95": [
+            -0.03099509193604145,
+            -0.010907832940932304
+          ],
+          "difference": -0.021152557392190463,
+          "resamples": 2000,
+          "seed": 0,
+          "share_of_resamples_below_0": 1.0
+        }
+      },
+      "params": 1869504,
+      "plays": [
+        {
+          "baseline_bpb": 2.0876557864682264,
+          "bytes": 127094,
+          "difference": -0.03615657246581705,
+          "model_bpb": 2.0514992140024093,
+          "title": "AS YOU LIKE IT"
+        },
+        {
+          "baseline_bpb": 2.167571631399675,
+          "bytes": 178068,
+          "difference": -0.010888505468198417,
+          "model_bpb": 2.1566831259314765,
+          "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK"
+        },
+        {
+          "baseline_bpb": 2.0378835918061324,
+          "bytes": 120511,
+          "difference": -0.020495180938900237,
+          "model_bpb": 2.017388410867232,
+          "title": "THE TRAGEDY OF TITUS ANDRONICUS"
+        }
+      ],
+      "recorded_val_bpb": 2.0858429544387227,
+      "recorded_val_bpb_ci95": [
+        2.0743703245762806,
+        2.0977968779094742
+      ],
+      "tokenizer": "byte",
+      "unpaired": {
+        "256": {
+          "baseline_ci95": [
+            2.0962899574777327,
+            2.1187580004074573
+          ],
+          "model_ci95": [
+            2.0743105703550793,
+            2.097777052573376
+          ]
+        },
+        "8192": {
+          "baseline_ci95": [
+            2.082745928009695,
+            2.132453299334941
+          ],
+          "model_ci95": [
+            2.061467839558269,
+            2.1119140984802476
+          ]
+        }
+      },
+      "val_bpb": 2.08584285767434
+    }
+  },
+  "seconds": 166.3,
+  "title": "Paired re-analysis: scratch models vs the best n-gram on the same validation bytes",
+  "validation_bytes": 425674,
+  "verdict": "supported"
+}

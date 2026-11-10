@@ -112,13 +112,28 @@
       "value": 1.0
     },
     {
+      "claim": "Flagship minus best n-gram, paired over 8 KiB validation blocks (post-hoc; 95% interval)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "make paired",
+      "run_id_or_source": "reports/paired/summary.json",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": [
+        -0.0212,
+        [
+          -0.031,
+          -0.0109
+        ]
+      ]
+    },
+    {
       "claim": "Automated tests passing (pytest, CPU)",
       "dataset_version": "a9b80ce5897befa1",
       "reproduction_command": "make test",
       "run_id_or_source": "reports/test_summary.json",
       "status": "verified",
       "unit": "tests",
-      "value": 89
+      "value": 120
     },
     {
       "claim": "distilgpt2 validation bits-per-byte, frozen vs LoRA-adapted (r=8, 300 steps)",
@@ -133,7 +148,7 @@
       ]
     }
   ],
-  "generated": "2026-11-09T05:57:21+00:00",
-  "git": "63a7704b859be2cf1e815ca996147d7f77c0a52e",
+  "generated": "2026-11-10T00:07:27+00:00",
+  "git": "34347739bc3324a4e497fdb0f6baba8086695cf8",
   "policy": "Only status=verified claims may be used as resume achievements."
 }

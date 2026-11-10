@@ -6,7 +6,7 @@ WEB_PORT ?= 5101
 
 .PHONY: help setup data smoke test test-fast lint typecheck web-check ci demo api web standard analyze report \
         final-test bench export reproduce-scratch clean distclean serve-openai bench-kv quant-int8 \
-        lm-eval-setup lm-eval export-hf serving-report
+        lm-eval-setup lm-eval export-hf serving-report paired
 
 help:
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -88,6 +88,9 @@ export-hf: ## Hub-compatible folders (safetensors + config + model card); local 
 	$(MG) export-hf $(FLAGSHIP)
 	$(MG) export-hf lm-byte-small-240f8c28-s0
 	$(MG) export-hf $(BPE)
+
+paired: ## Paired block-bootstrap of scratch models vs the best n-gram on validation (CPU, ~3 min; needs checkpoints)
+	$(MG) paired
 
 serving-report: ## docs/SERVING_RESULTS.md from the saved serving records
 	$(MG) serving-report

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, fmt, type AttentionResult, type Blueprint, type Experiment, type GenResult, type MetricRec, type RunDetail, type RunRow } from "./api";
 import { Heatmap, LineChart, Legend, PALETTE, Reliability, type Series } from "./charts";
+import { PairedNote } from "./paired";
 
 export function ProvBadge({ p }: { p: string }) {
   const label = p === "measured" ? "MEASURED" : p === "smoke" ? "SMOKE" : p === "live" ? "LIVE SAMPLE" : p.toUpperCase();
@@ -381,6 +382,7 @@ function FindingCard({ e, open, onOpen, dataset, onShowRuns }: { e: Experiment; 
                   <td>{r.val_bpb_ci95 ? `[${fmt.n(r.val_bpb_ci95[0], 3)}, ${fmt.n(r.val_bpb_ci95[1], 3)}]` : "—"}</td><td>{fmt.n(r.ece, 3)}</td><td>{r.wall_time_s}</td><td>{fmt.sha(r.git_commit)}{r.git_dirty ? "*" : ""}</td></tr>
               ))}</tbody></table>
           )}
+          {e.experiment === "scratch" && <PairedNote />}
           <button onClick={() => onShowRuns(e.arms)}>Overlay these runs' curves</button>
           <div className="plots">{e.plots.map((p) => <img key={p} src={`/api/experiments/${e.experiment}/plots/${p}`} alt={`${e.title}: ${p}`} loading="lazy" />)}</div>
           <Source path={`reports/experiments/${e.experiment}/result.json`} />

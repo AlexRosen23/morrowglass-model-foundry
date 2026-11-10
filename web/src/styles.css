@@ -189,3 +189,6 @@ pre.gen { white-space: pre-wrap; font: 12.5px/1.55 var(--mono); margin: 0; max-h
   .grid2, .chain { grid-template-columns: 1fr; }
   .findbody dl { grid-template-columns: 1fr; }
 }
+
+.paired { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--ok, #1f9d74); background: var(--panel-2, transparent); }
+.paired h4 { margin: 0 0 6px; }

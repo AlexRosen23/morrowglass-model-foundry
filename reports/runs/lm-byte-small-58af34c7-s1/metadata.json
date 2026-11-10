@@ -8,7 +8,7 @@
     "train_tokens": 20480000,
     "weights_mb_fp32": 7.13
   },
-  "command": "/Users/alexrosen/Development/portfolio-worktrees/mg-seeds/.venv/bin/morrowglass run scratch-seeds --profile standard --quiet",
+  "command": "morrowglass run scratch-seeds --profile standard --quiet",
   "config_hash": "58af34c75b18e2b736b807dab29a3db9719b0d03dbc1b5c8cf52e2dc99cf3275",
   "data": {
     "bytes": {

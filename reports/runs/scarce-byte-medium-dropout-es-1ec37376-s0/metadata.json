@@ -8,7 +8,7 @@
     "train_tokens": 12288000,
     "weights_mb_fp32": 18.51
   },
-  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run break-overfit --profile standard",
+  "command": "morrowglass run break-overfit --profile standard",
   "config_hash": "1ec37376d2211ec827a29c781bc86f515eb047d37b5dcb05a52c722aec96da4a",
   "data": {
     "bytes": {

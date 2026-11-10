@@ -8,7 +8,7 @@
     "train_tokens": 20480000,
     "weights_mb_fp32": 7.69
   },
-  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run tokenization --profile standard",
+  "command": "morrowglass run tokenization --profile standard",
   "config_hash": "eb29b8fb6f384dc2787fdba42dd27dc1a309e2ffa67b45283fda5ee79e28bbe5",
   "data": {
     "bytes": {

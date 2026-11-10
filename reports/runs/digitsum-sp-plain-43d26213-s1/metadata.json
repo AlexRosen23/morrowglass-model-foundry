@@ -8,7 +8,7 @@
     "train_tokens": 27648000,
     "weights_mb_fp32": 1.66
   },
-  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run digitsum-scratchpad --profile standard",
+  "command": "morrowglass run digitsum-scratchpad --profile standard",
   "config_hash": "43d262133e22d7c84a0d05aece1f968eec2ab8895b1c4bb5deb6a2f9a22c90b3",
   "data": {
     "dataset": "synthetic-digitsum-mod10",

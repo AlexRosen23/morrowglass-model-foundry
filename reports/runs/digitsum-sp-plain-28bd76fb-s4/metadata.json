@@ -8,7 +8,7 @@
     "train_tokens": 27648000,
     "weights_mb_fp32": 1.66
   },
-  "command": "/Users/alexrosen/Development/portfolio-worktrees/mg-seeds/.venv/bin/morrowglass run digitsum-scratchpad-seeds --profile standard --quiet",
+  "command": "morrowglass run digitsum-scratchpad-seeds --profile standard --quiet",
   "config_hash": "28bd76fb4bccb64bf26b797d38d58544b46ab3f8bc6dca585444d99c1af0ae02",
   "data": {
     "dataset": "synthetic-digitsum-mod10",

@@ -26,6 +26,10 @@ export interface RunRow {
   finished: string | null;
   has_checkpoint: boolean;
   test_opened: boolean;
+  /** false for runs trained without the causal mask: their windowed val metric is leaky (newer API only). */
+  causal?: boolean;
+  /** the local checkpoint was re-trained by `morrowglass reproduce`, not the run's original weights. */
+  checkpoint_reproduced?: boolean;
 }
 
 export interface MetricRec {
@@ -65,6 +69,7 @@ export interface GenToken { id: number; text: string; prob: number; raw_prob: nu
 
 export interface GenResult {
   prompt: string; text: string; tokens: GenToken[]; note: string; run_id: string; provenance: Provenance; label: string;
+  checkpoint_origin?: "original" | "reproduced";
   mean_bits_per_token_self: number; baseline?: { model: string; text: string; order: number };
 }
 

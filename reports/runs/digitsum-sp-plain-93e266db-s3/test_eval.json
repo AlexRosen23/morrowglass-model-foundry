@@ -1,0 +1,22 @@
+{
+  "checkpoint": "best (selected on validation)",
+  "evaluated": "2026-11-10T05:49:45+00:00",
+  "reason": "Pre-registered OOD evaluation of digitsum-scratchpad-seeds (seeds 2-4, registered in 6811f0a before training); selected on val_iid only. No further changes to these runs follow.",
+  "results": {
+    "test_ood_far": {
+      "accuracy": 0.102,
+      "error": 0.898,
+      "loss": null,
+      "n": 2000,
+      "step_accuracy": 0.48799971342599224
+    },
+    "test_ood_near": {
+      "accuracy": 0.103,
+      "error": 0.897,
+      "loss": null,
+      "n": 2000,
+      "step_accuracy": 0.7027884454833863
+    }
+  },
+  "run_id": "digitsum-sp-plain-93e266db-s3"
+}

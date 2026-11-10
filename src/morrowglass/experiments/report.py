@@ -228,6 +228,18 @@ def build_metrics_json(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
         add("Flagship minus best n-gram, paired over 8 KiB validation blocks (post-hoc; 95% interval)",
             [round(pf["difference"], 4), [round(pf["ci95"][0], 4), round(pf["ci95"][1], 4)]], "bits/byte",
             "reports/paired/summary.json", "make paired")
+    ss = results.get("scratch-seeds")
+    if ss and ss["verdict"] not in ("pending", "n/a"):
+        o = ss["observations"]
+        add("Flagship recipe validation bits-per-byte across seeds 0-2 (mean, sd)",
+            [round(o["seed_mean"], 4), round(o["seed_stdev"], 4)], "bits/byte",
+            "reports/experiments/scratch-seeds/result.json", "uv run morrowglass run scratch-seeds")
+    dseeds = results.get("digitsum-scratchpad-seeds")
+    if dseeds and dseeds["verdict"] not in ("pending", "n/a"):
+        o = dseeds["observations"]
+        add("Seeds (of 5) in which position augmentation transfers to 12-16-term sums (> 3 SE over plain)",
+            o["transfer_count"], "seeds", "reports/experiments/digitsum-scratchpad-seeds/result.json",
+            "uv run morrowglass run digitsum-scratchpad-seeds")
     tests_file = REPORTS / "test_summary.json"
     if tests_file.exists():
         ts = read_json(tests_file)

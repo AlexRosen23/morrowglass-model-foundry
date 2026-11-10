@@ -127,13 +127,34 @@
       ]
     },
     {
+      "claim": "Flagship recipe validation bits-per-byte across seeds 0-2 (mean, sd)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run scratch-seeds",
+      "run_id_or_source": "reports/experiments/scratch-seeds/result.json",
+      "status": "verified",
+      "unit": "bits/byte",
+      "value": [
+        2.0805,
+        0.0047
+      ]
+    },
+    {
+      "claim": "Seeds (of 5) in which position augmentation transfers to 12-16-term sums (> 3 SE over plain)",
+      "dataset_version": "a9b80ce5897befa1",
+      "reproduction_command": "uv run morrowglass run digitsum-scratchpad-seeds",
+      "run_id_or_source": "reports/experiments/digitsum-scratchpad-seeds/result.json",
+      "status": "verified",
+      "unit": "seeds",
+      "value": 4
+    },
+    {
       "claim": "Automated tests passing (pytest, CPU)",
       "dataset_version": "a9b80ce5897befa1",
       "reproduction_command": "make test",
       "run_id_or_source": "reports/test_summary.json",
       "status": "verified",
       "unit": "tests",
-      "value": 128
+      "value": 134
     },
     {
       "claim": "distilgpt2 validation bits-per-byte, frozen vs LoRA-adapted (r=8, 300 steps)",
@@ -148,7 +169,7 @@
       ]
     }
   ],
-  "generated": "2026-11-10T05:35:35+00:00",
-  "git": "9556fb3dea3d63e4b8383943c5593a5184f7d1bd",
+  "generated": "2026-11-10T05:52:22+00:00",
+  "git": "2abb5f25dfa489066520f5bde3197216d8d6ddc3",
   "policy": "Only status=verified claims may be used as resume achievements."
 }

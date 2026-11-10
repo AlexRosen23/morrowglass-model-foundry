@@ -1,0 +1,158 @@
+{
+  "analysis_git": "2abb5f25dfa489066520f5bde3197216d8d6ddc3",
+  "analyzed": "2026-11-10T05:51:01+00:00",
+  "arms": [
+    "lm-byte-small-2822813d-s0",
+    "lm-byte-small-58af34c7-s1",
+    "lm-byte-small-c13d4cde-s2"
+  ],
+  "caveats": [
+    "Three seeds give a range, not an interval; they cover initialisation and batch order only.",
+    "Same data, splits and recipe as the flagship; validation only (the test split is not opened).",
+    "MPS training is not bit-deterministic: re-running seed 0 moved val bpb by 0.0018."
+  ],
+  "criterion": "For every seed in {0, 1, 2}: paired upper 95% bound < 0. AND max - min val bpb over the seeds < 0.021. The original unpaired criterion (non-overlapping intervals) is reported per seed as well.",
+  "experiment": "scratch-seeds",
+  "hypothesis": "Registered 2026-11-09 after the seed-0 flagship, its paired re-analysis and its reproduction were known, and before seeds 1 and 2 were trained. The flagship's lead over the best n-gram is not a seed-0 accident: for each of seeds 0, 1 and 2, the paired 95% block-bootstrap interval (8 KiB blocks, protocol of EVALUATIONS['paired-baseline']) of bpb(seed) - bpb(KN-4) lies below 0, and the spread of val bpb across the three seeds (max - min) is smaller than seed 0's gap to the n-gram (0.021 bpb).",
+  "missing_runs": [],
+  "new_arms": [
+    "lm-byte-small-58af34c7-s1",
+    "lm-byte-small-c13d4cde-s2"
+  ],
+  "observations": {
+    "paired_by_seed": {
+      "0": {
+        "blocks": 52,
+        "blocks_where_a_is_lower": 40,
+        "ci95": [
+          -0.03099509193604145,
+          -0.010907832940932304
+        ],
+        "difference": -0.021152557392190463,
+        "resamples": 2000,
+        "seed": 0,
+        "share_of_resamples_below_0": 1.0
+      },
+      "1": {
+        "blocks": 52,
+        "blocks_where_a_is_lower": 44,
+        "ci95": [
+          -0.040920421511140295,
+          -0.017853753703144973
+        ],
+        "difference": -0.029329679324773927,
+        "resamples": 2000,
+        "seed": 0,
+        "share_of_resamples_below_0": 1.0
+      },
+      "2": {
+        "blocks": 52,
+        "blocks_where_a_is_lower": 43,
+        "ci95": [
+          -0.04031275486877293,
+          -0.01837258954249801
+        ],
+        "difference": -0.02910361955205021,
+        "resamples": 2000,
+        "seed": 0,
+        "share_of_resamples_below_0": 1.0
+      }
+    },
+    "scores_match_records": true,
+    "seed0_gap_to_ngram": 0.02115246062780818,
+    "seed_mean": 2.080466880305036,
+    "seed_range": 0.008177134743614367,
+    "seed_stdev": 0.004657188437186357,
+    "unpaired_separated_by_seed": {
+      "0": false,
+      "1": true,
+      "2": true
+    },
+    "val_bpb_by_seed": {
+      "0": 2.0858429544387227,
+      "1": 2.0776658196951083,
+      "2": 2.077891866781277
+    }
+  },
+  "plots": [],
+  "profile": "standard",
+  "researcher_note": "Hypothesis (registered 2026-11-09 in 6811f0a, before seeds 1 and 2 were trained): the flagship's lead over the best n-gram is not a seed-0 accident. Every seed's paired 95% interval against KN-4 lies below 0, and the seed range is smaller than seed 0's 0.021 bpb gap.\nSetup: the flagship recipe exactly (4 x 4 x 192, 2,500 steps, MPS), seeds 1 and 2; seed 0 is the committed flagship. Paired scoring as in EVALUATIONS['paired-baseline'] (8 KiB blocks, 2,000 resamples), CPU, validation only.\nObserved: val bpb 2.0858 / 2.0777 / 2.0779 for seeds 0 / 1 / 2 (mean 2.0805, sd 0.0047, range 0.0082). Paired difference against KN-4: -0.0212 [-0.0310, -0.0109], -0.0293 [-0.0409, -0.0179], -0.0291 [-0.0403, -0.0184]. Supported.\nWorth saying plainly: seeds 1 and 2 would also have passed the original, unpaired criterion (their upper bounds are below the n-gram's lower bound); seed 0, the pre-registered run, was the worst of the three. The pre-registered scratch verdict still stays \"not supported\", because it was defined on seed 0.\nLimitations: three seeds give a range, not an interval; same data and splits; MPS is not bit-deterministic (re-running seed 0 moved it by 0.0018).\nDecision: report the flagship's advantage over the n-gram as about 0.02-0.03 bpb and consistent across seeds; keep the pre-registered verdict as written.\n",
+  "table": [
+    {
+      "best_step": 2500,
+      "device": "mps",
+      "ece": 0.028702500833558436,
+      "git_commit": "d72e0589db9fc44159850bc62a95bc908ddfbcfb",
+      "git_dirty": false,
+      "last_train_loss": 1.2574360370635986,
+      "params": 1869504,
+      "run_id": "lm-byte-small-2822813d-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.831149324936616,
+      "val_bpb": 2.0858429544387227,
+      "val_bpb_ci95": [
+        2.0743703245762806,
+        2.0977968779094742
+      ],
+      "val_loss": 1.445796162960027,
+      "val_ppl_token": 4.245230693138306,
+      "wall_time_s": 291.1
+    },
+    {
+      "best_step": 2400,
+      "device": "mps",
+      "ece": 0.019638979022636917,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": false,
+      "last_train_loss": 1.2826063632965088,
+      "params": 1869504,
+      "run_id": "lm-byte-small-58af34c7-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.823205066614709,
+      "val_bpb": 2.0776658196951083,
+      "val_bpb_ci95": [
+        2.0659427171593197,
+        2.0894307321882675
+      ],
+      "val_loss": 1.440128205067432,
+      "val_ppl_token": 4.221236966276679,
+      "wall_time_s": 142.7
+    },
+    {
+      "best_step": 2400,
+      "device": "mps",
+      "ece": 0.02456348004513191,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 1.3065357208251953,
+      "params": 1869504,
+      "run_id": "lm-byte-small-c13d4cde-s2",
+      "seed": 2,
+      "status": "completed",
+      "steps": 2500,
+      "tokenizer": "byte",
+      "tokens_seen": 20480000,
+      "train_subset_bpb": 1.829605211622577,
+      "val_bpb": 2.077891866781277,
+      "val_bpb_ci95": [
+        2.0663725360169,
+        2.0893110811297713
+      ],
+      "val_loss": 1.4402848889678836,
+      "val_ppl_token": 4.221898417967349,
+      "wall_time_s": 176.0
+    }
+  ],
+  "title": "Flagship recipe across seeds (0, 1, 2)",
+  "track": "language-model",
+  "verdict": "supported",
+  "verdict_detail": "val bpb by seed s0 2.0858, s1 2.0777, s2 2.0779 (range 0.0082); paired vs n-gram s0 -0.0212 [-0.0310, -0.0109]; s1 -0.0293 [-0.0409, -0.0179]; s2 -0.0291 [-0.0403, -0.0184]"
+}

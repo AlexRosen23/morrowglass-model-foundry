@@ -1,0 +1,6 @@
+Hypothesis (registered 2026-11-09 in 6811f0a, before seeds 2-4 were trained): plain learned positions stay at chance on 12-16 terms for every seed, and position augmentation transfers (far-OOD gain above 3 standard errors over its plain twin) in at least 3 of 5 seeds.
+Setup: the digitsum-scratchpad recipe exactly, seeds 2, 3 and 4 for both arms; seeds 0 and 1 are the committed runs. Selection on val_iid only; the OOD splits of the six new runs were opened once (test-access log, 2026-11-10T05:50:16Z).
+Observed: every plain arm is at chance on 12-16 terms (9.7-10.4%) with 100% in distribution. Position augmentation, far-OOD accuracy vs its plain twin: seed 0 10.5% vs 10.3% (no transfer), seed 1 88.7% vs 9.8%, seed 2 71.8% vs 9.7%, seed 3 100.0% vs 10.2%, seed 4 73.7% vs 10.4%. Transfer in 4 of 5 seeds. Supported.
+Reading: seed 0, the run that made this look fragile, is the outlier. With 4 of 5 the transfer rate is plausibly anywhere from about 28% to 99% (exact binomial 95% interval), so "usually, not always" is as far as five seeds go.
+Limitations: one model size, one task, learned absolute positions only; synthetic success is not evidence of general reasoning.
+Decision: describe position augmentation as transferring in most seeds (4/5) rather than as seed-dependent luck; RoPE / no-position variants remain the next test.

@@ -133,7 +133,7 @@
       "run_id_or_source": "reports/test_summary.json",
       "status": "verified",
       "unit": "tests",
-      "value": 120
+      "value": 128
     },
     {
       "claim": "distilgpt2 validation bits-per-byte, frozen vs LoRA-adapted (r=8, 300 steps)",
@@ -148,7 +148,7 @@
       ]
     }
   ],
-  "generated": "2026-11-10T00:07:27+00:00",
-  "git": "34347739bc3324a4e497fdb0f6baba8086695cf8",
+  "generated": "2026-11-10T05:35:35+00:00",
+  "git": "9556fb3dea3d63e4b8383943c5593a5184f7d1bd",
   "policy": "Only status=verified claims may be used as resume achievements."
 }

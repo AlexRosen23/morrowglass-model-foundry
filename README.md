@@ -28,7 +28,7 @@ It is for engineers who want to see how a small model behaves when data and comp
 | **Status** | Working. All 14 research experiments (12 plus 2 seed follow-ups) and all 4 serving/eval studies have run and are analysed. Nothing is deployed: everything runs on 127.0.0.1. |
 | **Stack** | Python 3.12, PyTorch 2.15 (MPS or CPU), HF `tokenizers`, FastAPI, SQLite (a derived index only), safetensors, lm-eval 0.4.13 (separate venv), Vite + React + TypeScript, `uv`, `pytest`, `ruff`, `mypy` |
 | **Run it** | `make setup && make smoke && make demo`, then open http://127.0.0.1:5101 |
-| **Verified** | 2026-11-09, against `main` at `2758c42`. A fresh clone passed `make setup` and `make ci` (114/114 tests). `make demo` was started and checked in a browser, and `/v1/completions` was called on a real checkpoint. A second, skeptical-reviewer audit of a fresh clone the same day led to fixes [#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5), [#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6) and [#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7); all three were merged the same day, followed by a pre-registered multi-seed follow-up ([#8](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/8)). |
+| **Verified** | 2026-11-10, against `main` at `513f958` (after [#8](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/8)). A fresh clone passed `make setup`, `make smoke`, `make test` (134/134), ruff, mypy and the web build. `make demo` was started and checked in a browser. `/v1/completions` was last called on a real checkpoint on 2026-11-09. A skeptical-reviewer audit of a fresh clone on 2026-11-09 led to fixes [#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5), [#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6) and [#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7), followed by a pre-registered multi-seed follow-up (#8); all four were merged on 2026-11-10 (UTC). |
 | **Hardware the evidence came from** | Apple M5 Pro (18 cores, 48 GB), PyTorch MPS; 4 CPU threads for training, 2 for the serving studies; a machine shared with other workloads |
 | **Reviewing for AI engineering?** | Start with [serving and standard evals](#serving-and-standard-evals), then [docs/AI_ENGINEER_READINESS.md](docs/AI_ENGINEER_READINESS.md) |
 
@@ -97,7 +97,7 @@ Each of these is visible in the code, not just the docs:
 | Pre-registered experiment registry → runner → analysis → report | Working | 40 runs in `reports/runs/`, 14 verdicts in `reports/experiments/*/result.json` |
 | Re-training a committed run without touching its record (`morrowglass reproduce`) | Working | `tests/test_evidence_integrity.py` (the committed directory stays byte-identical). On a fresh clone `make reproduce-scratch` re-trained the flagship to 2.0840 bpb against the committed 2.0858 (inside its interval) in 7 min 42 s, and installed the weights labelled as re-trained. `run --force` refuses to overwrite a committed record. |
 | Paired comparison against the best n-gram on the same bytes | Working (post-hoc, validation only) | `reports/paired/summary.json`, [docs/PAIRED_RESULTS.md](docs/PAIRED_RESULTS.md); `tests/test_paired.py` (per-token bits reproduce both evaluators; byte blocks line up across tokenizers) |
-| Locked test split with an access log | Working | `train/tasks.py` (`final_eval` excludes test); 3 logged openings in `reports/test_access_log.jsonl` |
+| Locked test split with an access log | Working | `train/tasks.py` (`final_eval` excludes test); 4 logged openings in `reports/test_access_log.jsonl` |
 | Calibration (top-1 ECE, reliability diagram) and latency benchmark | Working | ECE behaves on known cases (test); `reports/runs/lm-byte-small-2822813d-s0/bench.json` |
 | Digit-sum algorithmic track (length-shift splits, scratchpad variant) | Working | Expressions never cross splits (test); a copy-rule control proves the task pipeline can learn (`tests/test_synthetic_learning.py`) |
 | distilgpt2 + LoRA vs frozen | Working, one seed, validation only | `reports/lora/distilgpt2-s0.json`. Ran once with the author's approval (about 350 MB download). CI tests the plumbing on a locally built random GPT-2, so it never downloads. |
@@ -138,10 +138,10 @@ make demo      # builds the UI, then API on 127.0.0.1:5100 and workbench on 127.
 **Expected result**
 
 - `make smoke` ends with `smoke OK: outputs in reports/smoke/ (not evidence; plumbing only)`.
-- `make demo` serves http://127.0.0.1:5101. It opens on the Evidence tab with the flagship run `lm-byte-small-2822813d-s0` selected, and the ledger lists the 32 measured runs (tick "show smoke runs" to include the smoke ones).
+- `make demo` serves http://127.0.0.1:5101. It opens on the Evidence tab with the flagship run `lm-byte-small-2822813d-s0` selected, and the ledger lists the 40 measured runs (tick "show smoke runs" to include the smoke ones).
 - `curl -s 127.0.0.1:5100/health` returns `{"ok": true, … "project_id": "morrowglass", "mode": "recorded", "runs": 40, …}`.
 
-These were run from a fresh clone of `2758c42` on 2026-11-09, and `make ci` passed.
+These were run from a fresh clone of `513f958` on 2026-11-10, and every step passed.
 
 **Notes**
 
@@ -275,8 +275,8 @@ All work was on feature branches, merged with merge commits rather than squashed
 | Integration | Read-only `/health`, `/capabilities`, `/runs` contract; `demo.sh` works from a launcher's minimal PATH | [PR #2](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/2), merged 2026-11-09 |
 | F: serving and standard evals | Three studies pre-registered before any measurement (`d7e6512`); KV cache (`cf1c16d`); `/v1` endpoints (`bd81a4b`); harness runner, Hub export, int8, Serving tab (`be188a3`); generated serving report (`3987474`); results (`0594894`); Hub-name fix (`9fca106`) | [PR #3](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/3), merged 2026-11-09 |
 | Attach | The author's private Constellation dashboard opens this app and reads its runs | merged 2026-11-09 (private repo) |
-| G: skeptical-reviewer audit | Fresh-clone audit of every tab and claim. Fixes: evidence-integrity and fresh-clone API ([#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5)); workbench honesty and crash fixes ([#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6)); a paired re-analysis, registered in its own commit (`3434773`) before measuring ([#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7)) | 2026-11-09 |
-| H: multi-seed follow-ups | On the author's go-ahead: flagship seeds 1-2 and scratchpad seeds 2-4, registered in `6811f0a` before training; 8 runs, 20 min on MPS | [#8](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/8), 2026-11-09 |
+| G: skeptical-reviewer audit | Fresh-clone audit of every tab and claim. Fixes: evidence-integrity and fresh-clone API ([#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5)); workbench honesty and crash fixes ([#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6)); a paired re-analysis, registered in its own commit (`3434773`) before measuring ([#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7)) | audited 2026-11-09, merged 2026-11-10 |
+| H: multi-seed follow-ups | On the author's go-ahead: flagship seeds 1-2 and scratchpad seeds 2-4, registered in `6811f0a` before training; 8 runs, 20 min on MPS | [#8](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/8), merged 2026-11-10 |
 
 The repository was made public on 2026-11-09, after PR #3.
 
@@ -492,7 +492,7 @@ make test        # pytest, CPU; writes reports/test_summary.json
 make ci          # ruff + mypy + pytest + smoke + web build, which is what GitHub Actions runs
 ```
 
-- **Result:** 114/114 passing on `2758c42`. A fresh clone ran `make ci` on 2026-11-09 and passed ruff, mypy, all 114 tests, smoke and the web build. The audit PRs added 14 tests (8 in #5, 6 in #7) and #8 adds 6, for 134.
+- **Result:** 134/134 passing on `513f958`. A fresh clone on 2026-11-10 passed ruff, mypy, all 134 tests, smoke and the web build, and GitHub Actions passed on the same commit. The suite was 114 before the audit; #5 added 8 tests, #7 added 6 and #8 added 6.
 - **What the tests guarantee:** the [What works today](#what-works-today) table lists them. On top of the research guarantees, they cover:
   - KV-cache equivalence;
   - `/v1` behaviour (echo logprobs = direct forward, stream = non-stream, loopback only);

@@ -1,4 +1,4 @@
-# GitHub Actions enabled on this private repo with the owner's approval (2026-11-08).
+# GitHub Actions enabled with the author's approval (2026-11-08, while private; the repo is public since 2026-11-09).
 # Runs on pull requests and pushes to main only; read-only token; no deploys. `make ci` runs the same checks locally.
 name: ci
 on:

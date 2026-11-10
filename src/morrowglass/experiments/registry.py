@@ -226,11 +226,48 @@ def build(name: str, profile: str = "standard") -> Experiment:
                  early_stopping_patience=4)],
             ["The broken arm is shared with the capacity experiment (same config hash)."],
         )
+    if name == "scratch-seeds":
+        # Seed 0 is the committed flagship (the run id ignores the experiment name), so only seeds 1-2 train.
+        return Experiment(
+            name, "Flagship recipe across seeds (0, 1, 2)",
+            "Registered 2026-11-09 after the seed-0 flagship, its paired re-analysis and its reproduction were "
+            "known, and before seeds 1 and 2 were trained. The flagship's lead over the best n-gram is not a "
+            "seed-0 accident: for each of seeds 0, 1 and 2, the paired 95% block-bootstrap interval (8 KiB "
+            "blocks, protocol of EVALUATIONS['paired-baseline']) of bpb(seed) - bpb(KN-4) lies below 0, and the "
+            "spread of val bpb across the three seeds (max - min) is smaller than seed 0's gap to the n-gram "
+            "(0.021 bpb).",
+            "For every seed in {0, 1, 2}: paired upper 95% bound < 0. AND max - min val bpb over the seeds < 0.021. "
+            "The original unpaired criterion (non-overlapping intervals) is reported per seed as well.",
+            [_lm("lm-byte-small", name, "small", p, seed=s) for s in (1, 2)],
+            ["Three seeds give a range, not an interval; they cover initialisation and batch order only.",
+             "Same data, splits and recipe as the flagship; validation only (the test split is not opened).",
+             "MPS training is not bit-deterministic: re-running seed 0 moved val bpb by 0.0018."],
+        )
+    if name == "digitsum-scratchpad-seeds":
+        ds = build("digitsum-scratchpad", p)
+        arms = [replace(a, experiment=name, seed=seed) for seed in (2, 3, 4) for a in ds.arms if a.seed == 0]
+        return Experiment(
+            name, "Scratchpad length transfer across 5 seeds (0-4)",
+            "Registered 2026-11-09 after seeds 0 and 1 (seed 1 transferred to 12-16 terms, seed 0 barely moved) "
+            "and before seeds 2-4 were trained; same recipe. (a) Plain learned positions stay at chance on 12-16 "
+            "terms for every seed (far-OOD final-answer accuracy < 0.5). (b) Position augmentation transfers in a "
+            "majority of seeds: in at least 3 of the 5 seeds its far-OOD accuracy beats the plain twin's by more "
+            "than 3 standard errors of the difference.",
+            "(a) every plain arm (seeds 0-4): val_iid acc > 0.95 and test_ood_far acc < 0.5. (b) count of seeds with "
+            "acc_far(posaug) - acc_far(plain) > 3 * sqrt(p1(1-p1)/n1 + p2(1-p2)/n2) is >= 3 of 5. Supported if "
+            "(a) and (b); partially supported if exactly one holds.",
+            arms,
+            ["Five seeds estimate how often transfer happens; they cannot pin the rate down (a 3/5 result is "
+             "compatible with rates from about 15% to 95%).",
+             "The OOD splits of the new runs are opened once, after training, and logged.",
+             "Synthetic success is not evidence of general reasoning."],
+            track="algorithmic",
+        )
     raise KeyError(f"unknown experiment {name!r}; known: {', '.join(ALL)}")
 
 
 ALL = ["scratch", "tokenization", "capacity", "optimization", "digitsum", "digitsum-scratchpad", "break-lr",
-       "break-mask", "break-mask-long", "break-overfit"]
+       "break-mask", "break-mask-long", "break-overfit", "scratch-seeds", "digitsum-scratchpad-seeds"]
 
 
 # ---------------------------------------------------------------------------------------------------------------

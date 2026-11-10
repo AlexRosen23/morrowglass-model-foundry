@@ -102,18 +102,16 @@ def play_starts(text: str, titles: list[str]) -> list[tuple[str, int]]:
     return sorted(out, key=lambda x: x[1])
 
 
-def run_paired_study(device: str = "cpu") -> dict[str, Any]:
-    """Score every registered run and the best n-gram on validation; write reports/paired/summary.json."""
+def score_vs_baseline(run_ids: list[str] | tuple[str, ...], device: str = "cpu") -> dict[str, Any]:
+    """Paired comparison of each run with the val-chosen n-gram, using the EVALUATIONS['paired-baseline'] protocol."""
     from morrowglass.data.corpus import MANIFEST_DIR, load_split
     from morrowglass.data.loader import encode_split
-    from morrowglass.experiments.registry import EVALUATIONS, FLAGSHIP_RUN
-    from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, read_json, write_json
+    from morrowglass.experiments.registry import EVALUATIONS
+    from morrowglass.repro import REPO_ROOT, read_json
     from morrowglass.tokenizer.tokenizers import get_tokenizer
     from morrowglass.train.trainer import CHECKPOINT_ROOT, RUNS_DIR, load_model_from_checkpoint
 
-    ev = EVALUATIONS["paired-baseline"]
-    proto = ev.protocol
-    t0 = time.time()
+    proto = EVALUATIONS["paired-baseline"].protocol
     torch.set_num_threads(2)
     text = load_split("shakespeare", "val")
     n_text = len(text.encode("utf-8"))
@@ -139,7 +137,7 @@ def run_paired_study(device: str = "cpu") -> dict[str, Any]:
                 "matches_record": abs(kn_bpb - bl["best_val_bpb"]) < 1e-6}
 
     runs: dict[str, Any] = {}
-    for rid in ev.runs:
+    for rid in run_ids:
         summary = read_json(RUNS_DIR / rid / "summary.json")
         cfg = read_json(RUNS_DIR / rid / "config.json")["train"]
         model, state = load_model_from_checkpoint(CHECKPOINT_ROOT / rid / "best.pt")
@@ -170,6 +168,21 @@ def run_paired_study(device: str = "cpu") -> dict[str, Any]:
                                                                  proto["seed"])}
         runs[rid] = row
 
+    return {"protocol": proto, "validation_bytes": n_text, "plays": [{"title": t, "start_byte": s} for t, s in starts],
+            "baseline": baseline, "runs": runs}
+
+
+def run_paired_study(device: str = "cpu") -> dict[str, Any]:
+    """Score every registered run and the best n-gram on validation; write reports/paired/summary.json."""
+    from morrowglass.experiments.registry import EVALUATIONS, FLAGSHIP_RUN
+    from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, write_json
+
+    ev = EVALUATIONS["paired-baseline"]
+    proto = ev.protocol
+    t0 = time.time()
+    scored = score_vs_baseline(ev.runs, device)
+    runs, baseline, n_text = scored["runs"], scored["baseline"], scored["validation_bytes"]
+    starts = [(p["title"], p["start_byte"]) for p in scored["plays"]]
     flag = runs[FLAGSHIP_RUN]
     primary = flag["paired"][str(proto["primary_block_bytes"])]
     checks = {"paired_upper_below_0": primary["ci95"][1] < 0,
@@ -190,6 +203,23 @@ def run_paired_study(device: str = "cpu") -> dict[str, Any]:
            "preregistered_scratch_verdict_unchanged": "not supported (non-overlapping intervals required)"}
     write_json(REPO_ROOT / "reports" / "paired" / "summary.json", out)
     (REPO_ROOT / "docs" / "PAIRED_RESULTS.md").write_text(paired_report_md(out))
+    return out
+
+
+def run_seed_paired(device: str = "cpu") -> dict[str, Any]:
+    """Paired comparison for every seed of the flagship recipe (registered: build('scratch-seeds'))."""
+    from morrowglass.experiments.registry import FLAGSHIP_RUN, build
+    from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, read_json, write_json
+    from morrowglass.train.trainer import RUNS_DIR
+
+    t0 = time.time()
+    ids = [FLAGSHIP_RUN, *(a.run_id for a in build("scratch-seeds").arms)]
+    scored = score_vs_baseline(ids, device)
+    for rid, row in scored["runs"].items():
+        row["seed"] = read_json(RUNS_DIR / rid / "config.json")["train"]["seed"]
+    out = {"experiment": "scratch-seeds", "measured": now_iso(), "git": git_provenance(), "device": device,
+           "seconds": round(time.time() - t0, 1), **scored}
+    write_json(REPO_ROOT / "reports" / "paired" / "scratch-seeds.json", out)
     return out
 
 

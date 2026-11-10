@@ -1,0 +1,6 @@
+Hypothesis (registered 2026-11-09 in 6811f0a, before seeds 1 and 2 were trained): the flagship's lead over the best n-gram is not a seed-0 accident. Every seed's paired 95% interval against KN-4 lies below 0, and the seed range is smaller than seed 0's 0.021 bpb gap.
+Setup: the flagship recipe exactly (4 x 4 x 192, 2,500 steps, MPS), seeds 1 and 2; seed 0 is the committed flagship. Paired scoring as in EVALUATIONS['paired-baseline'] (8 KiB blocks, 2,000 resamples), CPU, validation only.
+Observed: val bpb 2.0858 / 2.0777 / 2.0779 for seeds 0 / 1 / 2 (mean 2.0805, sd 0.0047, range 0.0082). Paired difference against KN-4: -0.0212 [-0.0310, -0.0109], -0.0293 [-0.0409, -0.0179], -0.0291 [-0.0403, -0.0184]. Supported.
+Worth saying plainly: seeds 1 and 2 would also have passed the original, unpaired criterion (their upper bounds are below the n-gram's lower bound); seed 0, the pre-registered run, was the worst of the three. The pre-registered scratch verdict still stays "not supported", because it was defined on seed 0.
+Limitations: three seeds give a range, not an interval; same data and splits; MPS is not bit-deterministic (re-running seed 0 moved it by 0.0018).
+Decision: report the flagship's advantage over the n-gram as about 0.02-0.03 bpb and consistent across seeds; keep the pre-registered verdict as written.

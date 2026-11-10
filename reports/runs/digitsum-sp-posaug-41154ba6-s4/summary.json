@@ -1,0 +1,48 @@
+{
+  "best_step": 1400,
+  "best_val_iid_error": 0.0,
+  "checkpoints": {
+    "best": {
+      "bytes": 5260265,
+      "path": "artifacts/checkpoints/digitsum-sp-posaug-41154ba6-s4/best.pt",
+      "saved": "2026-11-10T05:46:34+00:00",
+      "sha256": "426907c185dd49c6553595de38f1d360d42c54c3b47aa8cc413b8d7d7cf1c302",
+      "step": 1400
+    },
+    "last": {
+      "bytes": 5260265,
+      "path": "artifacts/checkpoints/digitsum-sp-posaug-41154ba6-s4/last.pt",
+      "saved": "2026-11-10T05:48:17+00:00",
+      "sha256": "efd2c177ce9135d045efbb3a82e1b2f0d595722b73601d61c00bdd7b931b2e82",
+      "step": 3000
+    }
+  },
+  "experiment": "digitsum-scratchpad-seeds",
+  "failure": null,
+  "final": {
+    "train": {
+      "accuracy": 0.9999666666666667,
+      "error": 3.333333333332966e-05,
+      "loss": null,
+      "n": 60000,
+      "step_accuracy": 0.9999936871277378
+    },
+    "val_iid": {
+      "accuracy": 1.0,
+      "error": 0.0,
+      "loss": null,
+      "n": 2000,
+      "step_accuracy": 1.0
+    }
+  },
+  "final_eval_on": "best checkpoint",
+  "finished": "2026-11-10T05:48:23+00:00",
+  "mean_tokens_per_s": 141129.5,
+  "params": 435840,
+  "run_id": "digitsum-sp-posaug-41154ba6-s4",
+  "skipped_steps": 0,
+  "status": "completed",
+  "steps_completed": 3000,
+  "tokens_seen": 27648000,
+  "wall_time_s": 195.9
+}

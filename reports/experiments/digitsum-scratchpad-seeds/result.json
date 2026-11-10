@@ -1,0 +1,489 @@
+{
+  "analysis_git": "2abb5f25dfa489066520f5bde3197216d8d6ddc3",
+  "analyzed": "2026-11-10T05:51:01+00:00",
+  "arms": [
+    "digitsum-sp-plain-b231a0b3-s0",
+    "digitsum-sp-posaug-8fe76e50-s0",
+    "digitsum-sp-plain-43d26213-s1",
+    "digitsum-sp-posaug-65abe9b8-s1",
+    "digitsum-sp-plain-0dcbc26c-s2",
+    "digitsum-sp-posaug-5f7ed951-s2",
+    "digitsum-sp-plain-93e266db-s3",
+    "digitsum-sp-posaug-61a7fd4f-s3",
+    "digitsum-sp-plain-28bd76fb-s4",
+    "digitsum-sp-posaug-41154ba6-s4"
+  ],
+  "caveats": [
+    "Five seeds estimate how often transfer happens; they cannot pin the rate down (a 3/5 result is compatible with rates from about 15% to 95%).",
+    "The OOD splits of the new runs are opened once, after training, and logged.",
+    "Synthetic success is not evidence of general reasoning."
+  ],
+  "criterion": "(a) every plain arm (seeds 0-4): val_iid acc > 0.95 and test_ood_far acc < 0.5. (b) count of seeds with acc_far(posaug) - acc_far(plain) > 3 * sqrt(p1(1-p1)/n1 + p2(1-p2)/n2) is >= 3 of 5. Supported if (a) and (b); partially supported if exactly one holds.",
+  "experiment": "digitsum-scratchpad-seeds",
+  "hypothesis": "Registered 2026-11-09 after seeds 0 and 1 (seed 1 transferred to 12-16 terms, seed 0 barely moved) and before seeds 2-4 were trained; same recipe. (a) Plain learned positions stay at chance on 12-16 terms for every seed (far-OOD final-answer accuracy < 0.5). (b) Position augmentation transfers in a majority of seeds: in at least 3 of the 5 seeds its far-OOD accuracy beats the plain twin's by more than 3 standard errors of the difference.",
+  "missing_runs": [],
+  "new_arms": [
+    "digitsum-sp-plain-0dcbc26c-s2",
+    "digitsum-sp-posaug-5f7ed951-s2",
+    "digitsum-sp-plain-93e266db-s3",
+    "digitsum-sp-posaug-61a7fd4f-s3",
+    "digitsum-sp-plain-28bd76fb-s4",
+    "digitsum-sp-posaug-41154ba6-s4"
+  ],
+  "observations": {
+    "by_seed": {
+      "0": {
+        "plain": {
+          "far": {
+            "accuracy": 0.103,
+            "error": 0.897,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.49165353202464535
+          },
+          "near": {
+            "accuracy": 0.108,
+            "error": 0.892,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.7041242277508766
+          },
+          "run_id": "digitsum-sp-plain-b231a0b3-s0",
+          "val_iid_acc": 1.0
+        },
+        "posaug": {
+          "far": {
+            "accuracy": 0.105,
+            "error": 0.895,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.6014830204900415
+          },
+          "near": {
+            "accuracy": 0.346,
+            "error": 0.654,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.8590749707797629
+          },
+          "run_id": "digitsum-sp-posaug-8fe76e50-s0",
+          "val_iid_acc": 1.0
+        }
+      },
+      "1": {
+        "plain": {
+          "far": {
+            "accuracy": 0.0975,
+            "error": 0.9025,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.48610116062473135
+          },
+          "near": {
+            "accuracy": 0.105,
+            "error": 0.895,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.7016752935938109
+          },
+          "run_id": "digitsum-sp-plain-43d26213-s1",
+          "val_iid_acc": 1.0
+        },
+        "posaug": {
+          "far": {
+            "accuracy": 0.8875,
+            "error": 0.11250000000000004,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.9714858862301189
+          },
+          "near": {
+            "accuracy": 0.9845,
+            "error": 0.015499999999999958,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.9968831747091891
+          },
+          "run_id": "digitsum-sp-posaug-65abe9b8-s1",
+          "val_iid_acc": 1.0
+        }
+      },
+      "2": {
+        "plain": {
+          "far": {
+            "accuracy": 0.097,
+            "error": 0.903,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.48602951712279696
+          },
+          "near": {
+            "accuracy": 0.108,
+            "error": 0.892,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.702120554349641
+          },
+          "run_id": "digitsum-sp-plain-0dcbc26c-s2",
+          "val_iid_acc": 1.0
+        },
+        "posaug": {
+          "far": {
+            "accuracy": 0.718,
+            "error": 0.28200000000000003,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.9390672016048145
+          },
+          "near": {
+            "accuracy": 0.9705,
+            "error": 0.02949999999999997,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.994990816496911
+          },
+          "run_id": "digitsum-sp-posaug-5f7ed951-s2",
+          "val_iid_acc": 1.0
+        }
+      },
+      "3": {
+        "plain": {
+          "far": {
+            "accuracy": 0.102,
+            "error": 0.898,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.48799971342599224
+          },
+          "near": {
+            "accuracy": 0.103,
+            "error": 0.897,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.7027884454833863
+          },
+          "run_id": "digitsum-sp-plain-93e266db-s3",
+          "val_iid_acc": 1.0
+        },
+        "posaug": {
+          "far": {
+            "accuracy": 1.0,
+            "error": 0.0,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 1.0
+          },
+          "near": {
+            "accuracy": 1.0,
+            "error": 0.0,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 1.0
+          },
+          "run_id": "digitsum-sp-posaug-61a7fd4f-s3",
+          "val_iid_acc": 1.0
+        }
+      },
+      "4": {
+        "plain": {
+          "far": {
+            "accuracy": 0.1035,
+            "error": 0.8965,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.4903639489898266
+          },
+          "near": {
+            "accuracy": 0.113,
+            "error": 0.887,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.708799465687093
+          },
+          "run_id": "digitsum-sp-plain-28bd76fb-s4",
+          "val_iid_acc": 1.0
+        },
+        "posaug": {
+          "far": {
+            "accuracy": 0.7365,
+            "error": 0.26349999999999996,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.9290012895830349
+          },
+          "near": {
+            "accuracy": 0.956,
+            "error": 0.04400000000000004,
+            "loss": null,
+            "n": 2000,
+            "step_accuracy": 0.9922079367729727
+          },
+          "run_id": "digitsum-sp-posaug-41154ba6-s4",
+          "val_iid_acc": 1.0
+        }
+      }
+    },
+    "transfer": {
+      "0": {
+        "far_gain": 0.0020000000000000018,
+        "far_plain": 0.103,
+        "far_posaug": 0.105,
+        "near_posaug": 0.346,
+        "se": 0.00965313420604935,
+        "transfers": false
+      },
+      "1": {
+        "far_gain": 0.7899999999999999,
+        "far_plain": 0.0975,
+        "far_posaug": 0.8875,
+        "near_posaug": 0.9845,
+        "se": 0.009691168660177163,
+        "transfers": true
+      },
+      "2": {
+        "far_gain": 0.621,
+        "far_plain": 0.097,
+        "far_posaug": 0.718,
+        "near_posaug": 0.9705,
+        "se": 0.012042985510246204,
+        "transfers": true
+      },
+      "3": {
+        "far_gain": 0.898,
+        "far_plain": 0.102,
+        "far_posaug": 1.0,
+        "near_posaug": 1.0,
+        "se": 0.0067674219611311365,
+        "transfers": true
+      },
+      "4": {
+        "far_gain": 0.633,
+        "far_plain": 0.1035,
+        "far_posaug": 0.7365,
+        "near_posaug": 0.956,
+        "se": 0.011976132514296925,
+        "transfers": true
+      }
+    },
+    "transfer_count": 4
+  },
+  "plots": [],
+  "profile": "standard",
+  "researcher_note": "Hypothesis (registered 2026-11-09 in 6811f0a, before seeds 2-4 were trained): plain learned positions stay at chance on 12-16 terms for every seed, and position augmentation transfers (far-OOD gain above 3 standard errors over its plain twin) in at least 3 of 5 seeds.\nSetup: the digitsum-scratchpad recipe exactly, seeds 2, 3 and 4 for both arms; seeds 0 and 1 are the committed runs. Selection on val_iid only; the OOD splits of the six new runs were opened once (test-access log, 2026-11-10T05:50:16Z).\nObserved: every plain arm is at chance on 12-16 terms (9.7-10.4%) with 100% in distribution. Position augmentation, far-OOD accuracy vs its plain twin: seed 0 10.5% vs 10.3% (no transfer), seed 1 88.7% vs 9.8%, seed 2 71.8% vs 9.7%, seed 3 100.0% vs 10.2%, seed 4 73.7% vs 10.4%. Transfer in 4 of 5 seeds. Supported.\nReading: seed 0, the run that made this look fragile, is the outlier. With 4 of 5 the transfer rate is plausibly anywhere from about 28% to 99% (exact binomial 95% interval), so \"usually, not always\" is as far as five seeds go.\nLimitations: one model size, one task, learned absolute positions only; synthetic success is not evidence of general reasoning.\nDecision: describe position augmentation as transferring in most seeds (4/5) rather than as seed-dependent luck; RoPE / no-position variants remain the next test.\n",
+  "table": [
+    {
+      "best_step": 800,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 1.0659547911018308e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-b231a0b3-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 145.1
+    },
+    {
+      "best_step": 1200,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 1.3127212206143213e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-8fe76e50-s0",
+      "seed": 0,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 114.6
+    },
+    {
+      "best_step": 1000,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 3.71672577159643e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-43d26213-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 139.7
+    },
+    {
+      "best_step": 1600,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "85bc7e9fb2bf6d7a14c4bd312db33632f6b844f8",
+      "git_dirty": true,
+      "last_train_loss": 3.6333742681193826e-09,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-65abe9b8-s1",
+      "seed": 1,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 199.7
+    },
+    {
+      "best_step": 600,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 2.0405190426231457e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-0dcbc26c-s2",
+      "seed": 2,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 94.1
+    },
+    {
+      "best_step": 2000,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 4.733309300064548e-09,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-5f7ed951-s2",
+      "seed": 2,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 94.1
+    },
+    {
+      "best_step": 400,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 2.741639804071383e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-93e266db-s3",
+      "seed": 3,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 116.7
+    },
+    {
+      "best_step": 1800,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 5.361736610254297e-10,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-61a7fd4f-s3",
+      "seed": 3,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 156.8
+    },
+    {
+      "best_step": 800,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 5.2176162057548936e-08,
+      "params": 435840,
+      "run_id": "digitsum-sp-plain-28bd76fb-s4",
+      "seed": 4,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 148.8
+    },
+    {
+      "best_step": 1400,
+      "device": "mps",
+      "ece": null,
+      "git_commit": "6811f0ad434bf80da7d76bbad6ac96487f418741",
+      "git_dirty": true,
+      "last_train_loss": 4.1766750058513935e-09,
+      "params": 435840,
+      "run_id": "digitsum-sp-posaug-41154ba6-s4",
+      "seed": 4,
+      "status": "completed",
+      "steps": 3000,
+      "tokenizer": "byte",
+      "tokens_seen": 27648000,
+      "train_subset_bpb": null,
+      "val_bpb": null,
+      "val_bpb_ci95": null,
+      "val_loss": null,
+      "val_ppl_token": null,
+      "wall_time_s": 195.9
+    }
+  ],
+  "title": "Scratchpad length transfer across 5 seeds (0-4)",
+  "track": "algorithmic",
+  "verdict": "supported",
+  "verdict_detail": "plain at chance on 12-16 terms for all seeds: True; position augmentation transfers in 4 of 5 seeds (s0 far 0.105 vs 0.103, s1 far 0.887 vs 0.098, s2 far 0.718 vs 0.097, s3 far 1.000 vs 0.102, s4 far 0.737 vs 0.103)"
+}

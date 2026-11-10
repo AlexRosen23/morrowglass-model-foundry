@@ -202,6 +202,40 @@ Limitations: the improvement in best val loss is modest (0.045 nats). Most of th
 Next test: a dropout sweep {0.1, 0.2, 0.3} x 2 seeds, plus weight decay 0.3.
 Decision: always report the best-on-validation checkpoint (the trainer already does), and enable early stopping for scarce-data runs.
 
+## Flagship recipe across seeds (0, 1, 2)
+
+**Verdict: supported.** val bpb by seed s0 2.0858, s1 2.0777, s2 2.0779 (range 0.0082); paired vs n-gram s0 -0.0212 [-0.0310, -0.0109]; s1 -0.0293 [-0.0409, -0.0179]; s2 -0.0291 [-0.0403, -0.0184]
+
+- **Hypothesis.** Registered 2026-11-09 after the seed-0 flagship, its paired re-analysis and its reproduction were known, and before seeds 1 and 2 were trained. The flagship's lead over the best n-gram is not a seed-0 accident: for each of seeds 0, 1 and 2, the paired 95% block-bootstrap interval (8 KiB blocks, protocol of EVALUATIONS['paired-baseline']) of bpb(seed) - bpb(KN-4) lies below 0, and the spread of val bpb across the three seeds (max - min) is smaller than seed 0's gap to the n-gram (0.021 bpb).
+- **Criterion (pre-registered).** For every seed in {0, 1, 2}: paired upper 95% bound < 0. AND max - min val bpb over the seeds < 0.021. The original unpaired criterion (non-overlapping intervals) is reported per seed as well.
+- **Runs.** `lm-byte-small-2822813d-s0`, `lm-byte-small-58af34c7-s1`, `lm-byte-small-c13d4cde-s2`
+- **Caveats.** Three seeds give a range, not an interval; they cover initialisation and batch order only. Same data, splits and recipe as the flagship; validation only (the test split is not opened). MPS training is not bit-deterministic: re-running seed 0 moved val bpb by 0.0018.
+
+
+Hypothesis (registered 2026-11-09 in 6811f0a, before seeds 1 and 2 were trained): the flagship's lead over the best n-gram is not a seed-0 accident. Every seed's paired 95% interval against KN-4 lies below 0, and the seed range is smaller than seed 0's 0.021 bpb gap.
+Setup: the flagship recipe exactly (4 x 4 x 192, 2,500 steps, MPS), seeds 1 and 2; seed 0 is the committed flagship. Paired scoring as in EVALUATIONS['paired-baseline'] (8 KiB blocks, 2,000 resamples), CPU, validation only.
+Observed: val bpb 2.0858 / 2.0777 / 2.0779 for seeds 0 / 1 / 2 (mean 2.0805, sd 0.0047, range 0.0082). Paired difference against KN-4: -0.0212 [-0.0310, -0.0109], -0.0293 [-0.0409, -0.0179], -0.0291 [-0.0403, -0.0184]. Supported.
+Worth saying plainly: seeds 1 and 2 would also have passed the original, unpaired criterion (their upper bounds are below the n-gram's lower bound); seed 0, the pre-registered run, was the worst of the three. The pre-registered scratch verdict still stays "not supported", because it was defined on seed 0.
+Limitations: three seeds give a range, not an interval; same data and splits; MPS is not bit-deterministic (re-running seed 0 moved it by 0.0018).
+Decision: report the flagship's advantage over the n-gram as about 0.02-0.03 bpb and consistent across seeds; keep the pre-registered verdict as written.
+
+## Scratchpad length transfer across 5 seeds (0-4)
+
+**Verdict: supported.** plain at chance on 12-16 terms for all seeds: True; position augmentation transfers in 4 of 5 seeds (s0 far 0.105 vs 0.103, s1 far 0.887 vs 0.098, s2 far 0.718 vs 0.097, s3 far 1.000 vs 0.102, s4 far 0.737 vs 0.103)
+
+- **Hypothesis.** Registered 2026-11-09 after seeds 0 and 1 (seed 1 transferred to 12-16 terms, seed 0 barely moved) and before seeds 2-4 were trained; same recipe. (a) Plain learned positions stay at chance on 12-16 terms for every seed (far-OOD final-answer accuracy < 0.5). (b) Position augmentation transfers in a majority of seeds: in at least 3 of the 5 seeds its far-OOD accuracy beats the plain twin's by more than 3 standard errors of the difference.
+- **Criterion (pre-registered).** (a) every plain arm (seeds 0-4): val_iid acc > 0.95 and test_ood_far acc < 0.5. (b) count of seeds with acc_far(posaug) - acc_far(plain) > 3 * sqrt(p1(1-p1)/n1 + p2(1-p2)/n2) is >= 3 of 5. Supported if (a) and (b); partially supported if exactly one holds.
+- **Runs.** `digitsum-sp-plain-b231a0b3-s0`, `digitsum-sp-posaug-8fe76e50-s0`, `digitsum-sp-plain-43d26213-s1`, `digitsum-sp-posaug-65abe9b8-s1`, `digitsum-sp-plain-0dcbc26c-s2`, `digitsum-sp-posaug-5f7ed951-s2`, `digitsum-sp-plain-93e266db-s3`, `digitsum-sp-posaug-61a7fd4f-s3`, `digitsum-sp-plain-28bd76fb-s4`, `digitsum-sp-posaug-41154ba6-s4`
+- **Caveats.** Five seeds estimate how often transfer happens; they cannot pin the rate down (a 3/5 result is compatible with rates from about 15% to 95%). The OOD splits of the new runs are opened once, after training, and logged. Synthetic success is not evidence of general reasoning.
+
+
+Hypothesis (registered 2026-11-09 in 6811f0a, before seeds 2-4 were trained): plain learned positions stay at chance on 12-16 terms for every seed, and position augmentation transfers (far-OOD gain above 3 standard errors over its plain twin) in at least 3 of 5 seeds.
+Setup: the digitsum-scratchpad recipe exactly, seeds 2, 3 and 4 for both arms; seeds 0 and 1 are the committed runs. Selection on val_iid only; the OOD splits of the six new runs were opened once (test-access log, 2026-11-10T05:50:16Z).
+Observed: every plain arm is at chance on 12-16 terms (9.7-10.4%) with 100% in distribution. Position augmentation, far-OOD accuracy vs its plain twin: seed 0 10.5% vs 10.3% (no transfer), seed 1 88.7% vs 9.8%, seed 2 71.8% vs 9.7%, seed 3 100.0% vs 10.2%, seed 4 73.7% vs 10.4%. Transfer in 4 of 5 seeds. Supported.
+Reading: seed 0, the run that made this look fragile, is the outlier. With 4 of 5 the transfer rate is plausibly anywhere from about 28% to 99% (exact binomial 95% interval), so "usually, not always" is as far as five seeds go.
+Limitations: one model size, one task, learned absolute positions only; synthetic success is not evidence of general reasoning.
+Decision: describe position augmentation as transferring in most seeds (4/5) rather than as seed-dependent luck; RoPE / no-position variants remain the next test.
+
 ## Scratch Transformer vs count-based baselines (extended profile)
 
 **Verdict: supported.** Transformer 1.993 bpb vs best n-gram (kneser-ney-4, bpe1024) 2.107

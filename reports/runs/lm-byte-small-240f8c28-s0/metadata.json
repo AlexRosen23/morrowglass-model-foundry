@@ -8,7 +8,7 @@
     "train_tokens": 81920000,
     "weights_mb_fp32": 7.13
   },
-  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run scratch --profile extended --approved",
+  "command": "morrowglass run scratch --profile extended --approved",
   "config_hash": "240f8c280f9ea7fe719160dd93cd7dde2997a59f4fefb43de3f43e261f2571e9",
   "data": {
     "bytes": {

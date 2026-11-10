@@ -8,7 +8,7 @@
     "train_tokens": 3276800,
     "weights_mb_fp32": 1.03
   },
-  "command": "/Users/alexrosen/Desktop/Claude Projects/Morrowglass Model Foundry/.venv/bin/morrowglass run break-lr --profile standard",
+  "command": "morrowglass run break-lr --profile standard",
   "config_hash": "31ee17a127f299bf037c723f87660c60c49a2de142a9349209d6008b797d683c",
   "data": {
     "bytes": {

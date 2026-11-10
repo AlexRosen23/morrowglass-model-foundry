@@ -25,7 +25,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, read_json, write_json
+from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, portable_path, read_json, scrub_paths, write_json
 
 LM_EVAL_BIN = REPO_ROOT / ".venv-lmeval" / "bin" / "lm_eval"
 OUT_ROOT = REPO_ROOT / "reports" / "lm_eval"
@@ -112,10 +112,12 @@ def run_model(model: str, port: int = DEFAULT_PORT, limit: int | None = None) ->
             server.wait(timeout=20)
     if rc != 0:
         raise RuntimeError(f"lm_eval exited {rc} for {model}; see artifacts/logs/lm-eval-{safe_name(model)}.log")
+    for res in out_dir.rglob("results_*.json"):  # the harness records absolute task-config paths
+        write_json(res, scrub_paths(read_json(res)))
     samples = _stash_samples(model, out_dir) if not limit else {}
     meta = {"model": model, "finished": now_iso(), "wall_time_s": round(wall, 1), "limit": limit,
             "samples_outside_git": samples,
-            "command": " ".join(shlex.quote(c) for c in cmd).replace(str(REPO_ROOT) + "/", ""),
+            "command": portable_path(" ".join(shlex.quote(c) for c in cmd)),
             "server_command": " ".join(serve[1:]).replace(sys.executable, "python"), "git": git_provenance(),
             "max_length": max_length, "prefix_token_id": prefix}
     write_json(out_dir / "run_meta.json", meta)

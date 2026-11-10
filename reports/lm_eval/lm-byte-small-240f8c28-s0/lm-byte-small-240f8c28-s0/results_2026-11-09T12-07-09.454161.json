@@ -86,7 +86,7 @@
         "max_retries": 3,
         "timeout": 120,
         "custom_prefix_token_id": 10,
-        "config_source": "/Users/alexrosen/Development/portfolio-worktrees/morrowglass-ai-eng/.venv-lmeval/lib/python3.12/site-packages/lm_eval/tasks/lambada/lambada_openai.yaml"
+        "config_source": "lm_eval/tasks/lambada/lambada_openai.yaml"
       }
     },
     "morrowglass_shakespeare_val": {
@@ -201,7 +201,7 @@
         "max_retries": 3,
         "timeout": 120,
         "custom_prefix_token_id": 10,
-        "config_source": "/Users/alexrosen/Development/portfolio-worktrees/morrowglass-ai-eng/.venv-lmeval/lib/python3.12/site-packages/lm_eval/tasks/wikitext/wikitext.yaml"
+        "config_source": "lm_eval/tasks/wikitext/wikitext.yaml"
       }
     }
   },

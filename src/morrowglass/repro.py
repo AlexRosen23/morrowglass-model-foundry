@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -102,6 +103,38 @@ def git_provenance(cwd: Path = REPO_ROOT) -> dict[str, Any]:
     dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
     branch = _git("rev-parse", "--abbrev-ref", "HEAD") or "unknown"
     return {"commit": commit, "dirty": dirty, "branch": branch}
+
+
+def portable_path(text: str) -> str:
+    """Strip machine-specific prefixes from a recorded path or command.
+
+    Records are committed to a public repository, so they must not name the local user or folder layout:
+    paths inside the repo become repo-relative, files inside an installed package keep only their
+    package-relative tail (``.../site-packages/lm_eval/x.yaml`` -> ``lm_eval/x.yaml``), and anything
+    else under the home directory starts with ``~``.
+    """
+    text = re.sub(r"(?:[^\s\"']*/)?site-packages/", "", text)
+    text = text.replace(str(REPO_ROOT) + "/", "")
+    home = str(Path.home())
+    return text.replace(home + "/", "~/").replace(home, "~") if home != "/" else text
+
+
+def portable_command(argv: list[str]) -> str:
+    """The command line as it would be typed in the repo: the executable by name, paths made portable."""
+    if not argv:
+        return ""
+    return " ".join([Path(argv[0]).name, *(portable_path(a) for a in argv[1:])])
+
+
+def scrub_paths(obj: Any) -> Any:
+    """``portable_path`` applied to every string inside a JSON-like value."""
+    if isinstance(obj, str):
+        return portable_path(obj)
+    if isinstance(obj, dict):
+        return {k: scrub_paths(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [scrub_paths(v) for v in obj]
+    return obj
 
 
 def now_iso() -> str:

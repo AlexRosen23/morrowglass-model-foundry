@@ -441,7 +441,7 @@ Quality held, but decoding got slower. The fp32 baselines here were far slower t
 
 **Next highest-value steps**
 
-1. Add more seeds for the main-track arms, so the scratch-vs-n-gram gap can be stated with a seed range as well as a bootstrap CI. The paired test covers data noise on fixed checkpoints, not run-to-run variance. Two more flagship seeds are about 10-15 minutes of training, and five or more seeds per digit-sum scratchpad arm about 20 minutes; both wait for the author's go-ahead because the build machine has a known memory fault under long GPU loads.
+1. Add more seeds for the main-track arms, so the scratch-vs-n-gram gap can be stated with a seed range as well as a bootstrap CI. The paired test covers data noise on fixed checkpoints, not run-to-run variance. The author approved this run on 2026-11-09. It was pre-registered first, as flagship seeds 1-2 and digit-sum scratchpad seeds 2-4. Its results are reported in their own pull request, not in this README.
 2. Try RoPE or ALiBi:
    - in the digit-sum scratchpad track, to test whether relative positions remove the length-shift failure;
    - in serving, where the same change would let the KV cache slide.

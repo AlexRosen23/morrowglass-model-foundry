@@ -17,7 +17,7 @@ from morrowglass.eval.ngram import KneserNey, uniform_eval, unigram_eval
 from morrowglass.experiments.registry import Experiment, build
 from morrowglass.hardware import hardware_report, resolve_device
 from morrowglass.model.transformer import ModelConfig, MorrowglassLM, compute_budget
-from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, read_json, set_seed, write_json
+from morrowglass.repro import REPO_ROOT, git_provenance, now_iso, read_json, set_seed, sha256_file, write_json
 from morrowglass.tokenizer.tokenizers import get_tokenizer
 from morrowglass.train.trainer import (
     CHECKPOINT_ROOT,
@@ -269,12 +269,40 @@ def reproduce_run(run_id: str, device: str = "auto", quiet: bool = False, runs_d
 # ------------------------------------------------------------------ leak-free scoring
 
 
-@torch.no_grad()
+LEAK_FREE_RECORD = "leak_free_eval.json"
+
+
 def last_position_bpb(run_dir: Path, ckpt_root: Path = CHECKPOINT_ROOT, n_positions: int = 2048,
                       seed: int = 0, split: str = "val") -> dict[str, Any]:
-    """Score only the final position of each window: no model can see the future this way."""
+    """Score only the final position of each window: no model can see the future this way.
+
+    Weights are not in git, so the measurement is also kept next to the run record
+    (``leak_free_eval.json``, with the checkpoint's sha256). With the checkpoint present it is
+    re-measured, and the record is (re)written only when it is missing or the weights changed;
+    without the checkpoint, as on a fresh clone, the recorded value is used.
+    """
     cfg = TrainConfig.from_dict(read_json(run_dir / "config.json")["train"])
-    model, _ = load_model_from_checkpoint(ckpt_root / cfg.run_id / "best.pt")
+    ckpt = ckpt_root / cfg.run_id / "best.pt"
+    rec_path = run_dir / LEAK_FREE_RECORD
+    rec = read_json(rec_path) if rec_path.exists() else None
+    same = rec is not None and (rec["result"]["positions"], rec["result"]["seed"], rec["result"]["split"]) == (
+        n_positions, seed, split)
+    if not ckpt.exists():
+        if same:
+            return dict(rec["result"])  # type: ignore[index]
+        raise FileNotFoundError(f"{ckpt} is missing and {rec_path} has no matching measurement; train the run "
+                                f"or `morrowglass reproduce {cfg.run_id}` first")
+    sha = sha256_file(ckpt)
+    result = _last_position_bpb(cfg, ckpt, n_positions, seed, split)
+    if not same or rec["checkpoint_sha256"] != sha:  # type: ignore[index]
+        write_json(rec_path, {"result": result, "checkpoint_sha256": sha, "measured": now_iso(),
+                              "git": git_provenance()})
+    return result
+
+
+@torch.no_grad()
+def _last_position_bpb(cfg: TrainConfig, ckpt: Path, n_positions: int, seed: int, split: str) -> dict[str, Any]:
+    model, _ = load_model_from_checkpoint(ckpt)
     task = build_task(cfg)
     ids = task.splits[split].ids  # type: ignore[attr-defined]
     blen = task.splits[split].byte_len  # type: ignore[attr-defined]

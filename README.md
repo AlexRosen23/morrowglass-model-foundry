@@ -28,7 +28,7 @@ It is for engineers who want to see how a small model behaves when data and comp
 | **Status** | Working. All 14 research experiments (12 plus 2 seed follow-ups) and all 4 serving/eval studies have run and are analysed. Nothing is deployed: everything runs on 127.0.0.1. |
 | **Stack** | Python 3.12, PyTorch 2.15 (MPS or CPU), HF `tokenizers`, FastAPI, SQLite (a derived index only), safetensors, lm-eval 0.4.13 (separate venv), Vite + React + TypeScript, `uv`, `pytest`, `ruff`, `mypy` |
 | **Run it** | `make setup && make smoke && make demo`, then open http://127.0.0.1:5101 |
-| **Verified** | 2026-11-10, against `main` at `513f958` (after [#8](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/8)). A fresh clone passed `make setup`, `make smoke`, `make test` (134/134), ruff, mypy and the web build. `make demo` was started and checked in a browser. `/v1/completions` was last called on a real checkpoint on 2026-11-09. A skeptical-reviewer audit of a fresh clone on 2026-11-09 led to fixes [#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5), [#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6) and [#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7), followed by a pre-registered multi-seed follow-up (#8); all four were merged on 2026-11-10 (UTC). |
+| **Verified** | 2026-11-10, against `main` at `513f958` (after [#8](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/8)). A fresh clone passed `make setup`, `make smoke`, `make test` (134/134), ruff, mypy and the web build. On 2026-11-11 `main` at `5921e39` (after #10 and #11) collects 139 tests; an audit run of the subset that does not train models (111 tests; the other 28 are in the trainer, synthetic-learning, paired, LoRA and seed-follow-up files) passed. `make demo` was started and checked in a browser. `/v1/completions` was last called on a real checkpoint on 2026-11-09. A skeptical-reviewer audit of a fresh clone on 2026-11-09 led to fixes [#5](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/5), [#6](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/6) and [#7](https://github.com/AlexRosen23/morrowglass-model-foundry/pull/7), followed by a pre-registered multi-seed follow-up (#8); all four were merged on 2026-11-10 (UTC). |
 | **Hardware the evidence came from** | Apple M5 Pro (18 cores, 48 GB), PyTorch MPS; 4 CPU threads for training, 2 for the serving studies; a machine shared with other workloads |
 | **Reviewing for AI engineering?** | Start with [serving and standard evals](#serving-and-standard-evals), then [docs/AI_ENGINEER_READINESS.md](docs/AI_ENGINEER_READINESS.md) |
 
@@ -482,7 +482,7 @@ Quality held, but decoding got slower. The fp32 baselines here were far slower t
 | `docs/` | Research framing, results, serving, design and career docs (see Related); `docs/media/` screenshots and the walkthrough |
 | `resume_evidence/` | `metrics.json`: claims with status and source |
 | `scripts/` | `demo.sh`, `run_standard.sh`, `junit_summary.py`, `record_walkthrough.cjs` |
-| `tests/` | 134 pytest tests (CPU, no network) |
+| `tests/` | 139 pytest tests (CPU, no network) |
 | `.github/workflows/ci.yml` | CI: lint, types, tests, smoke, web build |
 
 ## Testing and CI
@@ -492,7 +492,7 @@ make test        # pytest, CPU; writes reports/test_summary.json
 make ci          # ruff + mypy + pytest + smoke + web build, which is what GitHub Actions runs
 ```
 
-- **Result:** 134/134 passing on `513f958`. A fresh clone on 2026-11-10 passed ruff, mypy, all 134 tests, smoke and the web build, and GitHub Actions passed on the same commit. The suite was 114 before the audit; #5 added 8 tests, #7 added 6 and #8 added 6.
+- **Result:** 139 tests collected on `5921e39` (2026-11-11); 134/134 passed on `513f958`. A fresh clone on 2026-11-10 passed ruff, mypy, all 134 tests, smoke and the web build, and GitHub Actions passed on the same commit. The suite was 114 before the audit; #5 added 8 tests, #7 added 6 and #8 added 6, and #10 and #11 added 5 more (139).
 - **What the tests guarantee:** the [What works today](#what-works-today) table lists them. On top of the research guarantees, they cover:
   - KV-cache equivalence;
   - `/v1` behaviour (echo logprobs = direct forward, stream = non-stream, loopback only);

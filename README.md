@@ -2,7 +2,11 @@
 
 [![ci](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml)
 
-Morrowglass is a small language-model laboratory that runs on a laptop. It has:
+**Morrowglass is a small language-model laboratory that runs on a laptop: it trains a Transformer from scratch on Shakespeare, tests it against strong baselines, and records every result so it can be checked.**
+
+## What it does
+
+It includes:
 
 - a decoder-only Transformer written in plain PyTorch;
 - a data pipeline that splits public-domain Shakespeare by play;
@@ -10,9 +14,7 @@ Morrowglass is a small language-model laboratory that runs on a laptop. It has:
 - a pre-registered set of experiments;
 - a serving layer: a KV cache, OpenAI-compatible `/v1` endpoints, the EleutherAI lm-evaluation-harness run through those endpoints, and a Hugging Face Hub-compatible export.
 
-Every number it reports, in the docs and in the browser workbench, is read from a saved record that names its commit, seed, data hash and hardware.
-
-It is for engineers who want to see how a small model behaves when data and compute are tiny, and how to measure and serve it without fooling themselves. You can:
+Every number it reports, in the docs and in the browser workbench, is read from a saved record that names its commit, seed, data hash and hardware. You can:
 
 - reproduce the experiments from the command line;
 - browse the 32 recorded runs and 12 experiment verdicts in the workbench;
@@ -20,6 +22,20 @@ It is for engineers who want to see how a small model behaves when data and comp
 - inspect attention heads;
 - watch the model being broken on purpose and then fixed;
 - call a trained checkpoint with any OpenAI client.
+
+## Who it is for
+
+Engineers who want to see how a small model behaves when data and compute are tiny, and how to measure and serve it without fooling themselves.
+
+## How it works
+
+Public-domain Shakespeare is split by play (so test text is never seen in training), tokenized, and used to train a plain-PyTorch decoder-only Transformer next to count-based n-gram baselines. A pre-registered list of experiments runs through one pipeline that writes a record per run; a FastAPI server and a React workbench read those records, and a serving layer exposes checkpoints through OpenAI-compatible `/v1` endpoints. A fuller walkthrough is in "How it works (detail)" below.
+
+## Try it
+
+```bash
+make setup && make smoke && make demo     # then open http://127.0.0.1:5101
+```
 
 ## At a glance
 
@@ -204,7 +220,7 @@ uv run morrowglass export-artifact <run_id>
 
 The `extended` profile and the LoRA track (`uv run morrowglass lora --approved`) refuse to run without `--approved`. Run without it, they print their cost first.
 
-## How it works
+## How it works (detail)
 
 ```mermaid
 flowchart LR
@@ -530,3 +546,5 @@ make ci          # ruff + mypy + pytest + smoke + web build, which is what GitHu
 - [UI walkthrough recording](docs/media/walkthrough.webm)
 - **Dashboard:** the author's private Constellation dashboard has a "Glassworks" world that launches this app with `./scripts/demo.sh` and reads `/runs` and `/capabilities`.
 - **License:** code is MIT ([LICENSE](LICENSE)). The training text is public domain (Project Gutenberg eBook #100, boilerplate removed).
+
+See also [CONTRIBUTING.md](CONTRIBUTING.md) and [FEATURES.md](FEATURES.md).

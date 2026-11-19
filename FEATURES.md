@@ -37,7 +37,7 @@ Morrowglass is a small language-model laboratory that runs on a laptop. It has a
 
 ## Contents
 
-1. [What it is and who it's for](#1-what-it-is-and-whos-it-for)
+1. [What it is and who it's for](#1-what-it-is-and-who-its-for)
 2. [How to run it](#2-how-to-run-it)
 3. [Architecture at a glance](#3-architecture-at-a-glance)
 4. [Features](#4-features)

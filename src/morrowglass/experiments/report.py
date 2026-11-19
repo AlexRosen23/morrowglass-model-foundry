@@ -98,6 +98,8 @@ def build_results_md(results: dict[str, dict[str, Any]]) -> str:
     L += ["## Locked test split", ""]
     if tl.exists():
         for ln in tl.read_text().splitlines():
+            if not ln.strip():
+                continue
             e = json.loads(ln)
             L.append(f"- {e['time']} opened for {len(e['runs'])} run(s){' + baseline' if e['baseline'] else ''} at `{e['git'][:8]}`: {e['reason']}")
         L.append("")

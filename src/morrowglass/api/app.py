@@ -406,7 +406,11 @@ def _job_view(j: Job) -> dict[str, Any]:
     metrics = []
     mp = j.run_dir / "metrics.jsonl"
     if mp.exists() and mp.stat().st_mtime >= j.started - 1:
-        metrics = [json.loads(ln) for ln in mp.read_text().splitlines() if ln.strip()]
+        for ln in mp.read_text().splitlines():
+            try:
+                metrics.append(json.loads(ln))
+            except json.JSONDecodeError:
+                continue  # blank line, or the trainer is still writing the last one
     return {"id": j.id, "kind": j.kind, "status": j.status, "elapsed_s": round(time.time() - j.started, 1),
             "run_id": j.run_dir.name, "metrics": metrics[-200:], "provenance": "smoke"}
 

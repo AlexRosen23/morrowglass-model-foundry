@@ -9,7 +9,7 @@ WEB_PORT ?= 5101
         lm-eval-setup lm-eval export-hf serving-report paired
 
 help:
-	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-18s %s\n", $$1, $$2}'
+	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
 setup: ## Install pinned Python (uv) and web (npm ci) dependencies
 	$(UV) sync --frozen

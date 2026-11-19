@@ -1,5 +1,7 @@
 # Morrowglass Model Foundry
 
+**From-scratch language-model lab**
+
 [![ci](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexRosen23/morrowglass-model-foundry/actions/workflows/ci.yml)
 
 **Morrowglass is a small language-model laboratory that runs on a laptop: it trains a Transformer from scratch on Shakespeare, tests it against strong baselines, and records every result so it can be checked.**

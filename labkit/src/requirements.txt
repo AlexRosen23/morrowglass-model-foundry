@@ -1,0 +1,4 @@
+# The kit was tested with exactly these versions (Python 3.12, macOS on Apple Silicon, CPU).
+# Other versions will probably work but have not been tested.
+torch==2.15.0
+pytest==9.2.0

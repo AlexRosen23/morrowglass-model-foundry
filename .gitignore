@@ -49,3 +49,6 @@ __pycache__/
 # Local tooling
 .claude/
 .venv-lmeval/
+
+# Lab kit build output (scripts/package-labkit.sh)
+/dist/

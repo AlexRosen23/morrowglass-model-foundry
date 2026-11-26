@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <!-- Localpane Lab Kit cover: original artwork, Localpane palette (accent #3b5bdb / #7b93ff on #0f1115). -->
+  <defs>
+    <style>
+      .sans { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+  <rect width="1280" height="720" fill="#0f1115"/>
+  <rect x="24" y="24" width="1232" height="672" rx="20" fill="none" stroke="#2b323c" stroke-width="2"/>
+
+  <!-- brand -->
+  <rect x="80" y="76" width="56" height="56" rx="12" fill="#3b5bdb"/>
+  <text x="108" y="113" class="mono" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">{ }</text>
+  <text x="152" y="113" class="sans" font-size="26" font-weight="600" fill="#e6e9ee">Localpane <tspan fill="#9aa4b2" font-weight="400">Lab Kit</tspan></text>
+
+  <!-- title -->
+  <text x="80" y="236" class="sans" font-size="56" font-weight="800" fill="#e6e9ee">Build a Transformer</text>
+  <text x="80" y="304" class="sans" font-size="56" font-weight="800" fill="#e6e9ee">Language Model</text>
+  <text x="80" y="372" class="sans" font-size="56" font-weight="800" fill="#e6e9ee">From Scratch</text>
+  <text x="80" y="428" class="sans" font-size="34" font-weight="700" fill="#7b93ff">on Your Laptop</text>
+  <text x="80" y="492" class="sans" font-size="25" fill="#9aa4b2">8 steps · starter code · tests for every step · full solution</text>
+
+  <!-- step pills -->
+  <g class="mono" font-size="17" fill="#e6e9ee">
+    <rect x="80" y="560" width="138" height="40" rx="20" fill="#1f2747"/><text x="149" y="586" text-anchor="middle">attention</text>
+    <rect x="230" y="560" width="112" height="40" rx="20" fill="#1f2747"/><text x="286" y="586" text-anchor="middle">blocks</text>
+    <rect x="354" y="560" width="124" height="40" rx="20" fill="#1f2747"/><text x="416" y="586" text-anchor="middle">training</text>
+    <rect x="490" y="560" width="124" height="40" rx="20" fill="#1f2747"/><text x="552" y="586" text-anchor="middle">sampling</text>
+    <rect x="626" y="560" width="124" height="40" rx="20" fill="#1f2747"/><text x="688" y="586" text-anchor="middle">KV cache</text>
+  </g>
+
+  <!-- a causal attention map: each row reads only from itself and earlier tokens -->
+  <g>
+    <rect x="820" y="186" width="52" height="44" rx="8" fill="#161a21" stroke="#7b93ff" stroke-width="2"/>
+    <text x="846.0" y="216" class="mono" font-size="22" font-weight="700" fill="#e6e9ee" text-anchor="middle">R</text>
+    <rect x="878" y="186" width="52" height="44" rx="8" fill="#161a21" stroke="#7b93ff" stroke-width="2"/>
+    <text x="904.0" y="216" class="mono" font-size="22" font-weight="700" fill="#e6e9ee" text-anchor="middle">O</text>
+    <rect x="936" y="186" width="52" height="44" rx="8" fill="#161a21" stroke="#7b93ff" stroke-width="2"/>
+    <text x="962.0" y="216" class="mono" font-size="22" font-weight="700" fill="#e6e9ee" text-anchor="middle">M</text>
+    <rect x="994" y="186" width="52" height="44" rx="8" fill="#161a21" stroke="#7b93ff" stroke-width="2"/>
+    <text x="1020.0" y="216" class="mono" font-size="22" font-weight="700" fill="#e6e9ee" text-anchor="middle">E</text>
+    <rect x="1052" y="186" width="52" height="44" rx="8" fill="#161a21" stroke="#7b93ff" stroke-width="2"/>
+    <text x="1078.0" y="216" class="mono" font-size="22" font-weight="700" fill="#e6e9ee" text-anchor="middle">O</text>
+    <rect x="1110" y="186" width="52" height="44" rx="8" fill="#161a21" stroke="#7b93ff" stroke-width="2"/>
+    <text x="1136.0" y="216" class="mono" font-size="22" font-weight="700" fill="#e6e9ee" text-anchor="middle">:</text>
+    <text x="798" y="284.0" class="mono" font-size="22" font-weight="700" fill="#9aa4b2" text-anchor="middle">R</text>
+    <text x="798" y="342.0" class="mono" font-size="22" font-weight="700" fill="#9aa4b2" text-anchor="middle">O</text>
+    <text x="798" y="400.0" class="mono" font-size="22" font-weight="700" fill="#9aa4b2" text-anchor="middle">M</text>
+    <text x="798" y="458.0" class="mono" font-size="22" font-weight="700" fill="#9aa4b2" text-anchor="middle">E</text>
+    <text x="798" y="516.0" class="mono" font-size="22" font-weight="700" fill="#9aa4b2" text-anchor="middle">O</text>
+    <text x="798" y="574.0" class="mono" font-size="22" font-weight="700" fill="#9aa4b2" text-anchor="middle">:</text>
+    <rect x="820" y="250" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="1.00"/>
+    <rect x="878" y="250" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="936" y="250" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="994" y="250" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1052" y="250" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1110" y="250" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="820" y="308" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.58"/>
+    <rect x="878" y="308" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="1.00"/>
+    <rect x="936" y="308" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="994" y="308" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1052" y="308" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1110" y="308" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="820" y="366" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.23"/>
+    <rect x="878" y="366" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.79"/>
+    <rect x="936" y="366" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.83"/>
+    <rect x="994" y="366" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1052" y="366" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1110" y="366" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="820" y="424" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.22"/>
+    <rect x="878" y="424" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.42"/>
+    <rect x="936" y="424" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.54"/>
+    <rect x="994" y="424" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.85"/>
+    <rect x="1052" y="424" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="1110" y="424" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="820" y="482" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.21"/>
+    <rect x="878" y="482" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.22"/>
+    <rect x="936" y="482" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.32"/>
+    <rect x="994" y="482" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.87"/>
+    <rect x="1052" y="482" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.59"/>
+    <rect x="1110" y="482" width="52" height="52" rx="8" fill="none" stroke="#2b323c" stroke-width="2" stroke-dasharray="5 5"/>
+    <rect x="820" y="540" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.21"/>
+    <rect x="878" y="540" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.32"/>
+    <rect x="936" y="540" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.48"/>
+    <rect x="994" y="540" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.30"/>
+    <rect x="1052" y="540" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.38"/>
+    <rect x="1110" y="540" width="52" height="52" rx="8" fill="#3b5bdb" fill-opacity="0.69"/>
+  </g>
+  <text x="991.0" y="628" class="mono" font-size="16" fill="#9aa4b2" text-anchor="middle">causal self-attention: no peeking ahead</text>
+</svg>
